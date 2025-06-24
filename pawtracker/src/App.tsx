@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   ClerkProvider,
   SignInButton,
@@ -8,6 +8,9 @@ import {
 } from '@clerk/clerk-react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './styles/App.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import PetGrid from './components/PetGrid';
 
 const clerkPubKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY as string;
 
@@ -26,36 +29,19 @@ const LandingPage = () => {
   }
 
   return (
-    <div
-      className="min-vh-100 d-flex align-items-center justify-content-center"
-      style={{ backgroundColor: '#e6f3ff' }}
-    >
-      <div
-        className="bg-white p-5 rounded shadow-lg w-100 border"
-        style={{
-          maxWidth: '500px',
-          minHeight: '400px',
-          borderColor: '#002D72',
-          borderWidth: '2px',
-        }}
-      >
+    <div className="landing-page">
+      <div className="login-container">
         <h1 className="text-center mb-5 fw-bold text-dark">
           Welcome to Paw Tracker 🐾
         </h1>
         <div className="d-flex flex-column align-items-center gap-3">
           <SignInButton mode="modal">
-            <button
-              className="btn w-100 text-white"
-              style={{ backgroundColor: '#002D72' }}
-            >
+            <button className="btn text-white auth-button">
               Log In
             </button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button
-              className="btn w-100 text-white"
-              style={{ backgroundColor: '#002D72' }}
-            >
+            <button className="btn text-white auth-button">
               Sign Up
             </button>
           </SignUpButton>
@@ -106,22 +92,13 @@ const Dashboard = () => {
   }
 
   return (
-    <>
-      <nav className="navbar navbar-light bg-white shadow">
-        <div className="container-fluid">
-          <span className="navbar-brand mb-0 h1">🐾 Paw Tracker</span>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </nav>
-      <div className="bg-light min-vh-100 py-5">
-        <div className="container">
-          <div className="bg-white p-5 rounded shadow">
-            <h1 className="mb-3">Welcome, {user.firstName}!</h1>
-            <p>Start tracking your pet's activities and health records.</p>
-          </div>
-        </div>
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Welcome, {user.firstName}! 🐾</h1>
+        <UserButton />
       </div>
-    </>
+      <PetGrid />
+    </div>
   );
 };
 

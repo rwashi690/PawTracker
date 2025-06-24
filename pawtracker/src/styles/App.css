@@ -1,0 +1,23 @@
+.landing-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e6f3ff;
+}
+
+.login-container {
+  background-color: white;
+  padding: 3rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  min-height: 400px;
+  border: 2px solid #002D72;
+}
+
+.auth-button {
+  background-color: #002D72;
+  width: 100%;
+}

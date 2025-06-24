@@ -1,0 +1,31 @@
+.pet-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.pet-circle.add-button {
+  background-color: #f8f9fa;
+}
+
+.pet-circle.add-button i {
+  font-size: 2rem;
+  color: #007bff;
+}
+
+.pet-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pet-name {
+  margin-top: 0.5rem;
+}
