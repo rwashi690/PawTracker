@@ -17,7 +17,7 @@ const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({ children }) =
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 };
 
 export default ClerkProtectedRoute;

@@ -60,10 +60,15 @@ app.post('/api/users', async (req: Request, res: Response): Promise<void> => {
     }
 
     const user = await createUser({ clerkId, email, firstName, lastName });
-    res.status(201).json(user);
+    // Even if the user already existed, we return 200 since the user data was successfully retrieved/updated
+    res.status(200).json({
+      user,
+      message: 'User created or updated successfully'
+    });
   } catch (error) {
     console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
+    const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ error: message });
   }
 });
 
