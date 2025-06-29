@@ -1,19 +1,54 @@
-import React, { useState } from 'react';
-import { Container, Modal, Form, Button } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Modal, Form, Button, Alert } from 'react-bootstrap';
+import { useAuth } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
 import '../styles/PetGrid.css';
 
 interface Pet {
   id: number;
   name: string;
-  imageUrl: string;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const PetGrid: React.FC = () => {
+  const { getToken } = useAuth();
   const [pets, setPets] = useState<Pet[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newPetName, setNewPetName] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchPets = useCallback(async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        setError('Not authenticated. Please sign in.');
+        return;
+      }
+      const response = await fetch('http://localhost:3001/api/pets', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch pets');
+      }
+      const data = await response.json();
+      setPets(data);
+    } catch (error) {
+      console.error('Error fetching pets:', error);
+      setError('Failed to load pets');
+    }
+  }, [getToken, setError, setPets]);
+
+  useEffect(() => {
+    fetchPets();
+  }, [fetchPets]);
 
   const handleAddPet = () => {
     setShowModal(true);
@@ -29,37 +64,63 @@ const PetGrid: React.FC = () => {
     e.preventDefault();
     if (!selectedImage || !newPetName) return;
 
-    // Create FormData for file upload
+    setIsLoading(true);
+    setError(null);
+
     const formData = new FormData();
     formData.append('image', selectedImage);
     formData.append('name', newPetName);
 
     try {
-      // TODO: Replace with actual API endpoint
-      const response = await fetch('/api/pets', {
+      const token = await getToken();
+      if (!token) {
+        setError('Not authenticated. Please sign in.');
+        return;
+      }
+
+      // No Content-Type header needed for FormData, browser will set it automatically
+      const response = await fetch('http://localhost:3001/api/pets', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
+        credentials: 'include'
       });
       
-      if (response.ok) {
-        const newPet = await response.json();
-        setPets([...pets, newPet]);
-        setShowModal(false);
-        setNewPetName('');
-        setSelectedImage(null);
+      if (response.status === 404) {
+        throw new Error('User not found. Please make sure you are properly signed in.');
       }
+      
+      if (!response.ok) {
+        throw new Error('Failed to add pet');
+      }
+
+      const newPet = await response.json();
+      setPets([...pets, newPet]);
+      setShowModal(false);
+      setNewPetName('');
+      setSelectedImage(null);
     } catch (error) {
       console.error('Error adding pet:', error);
+      setError('Failed to add pet. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Container>
       <div className="pet-grid">
+        {error && (
+          <Alert variant="danger" className="w-100" onClose={() => setError(null)} dismissible>
+            {error}
+          </Alert>
+        )}
         {pets.map((pet) => (
           <PetCircle
             key={pet.id}
-            imageUrl={pet.imageUrl}
+            imageUrl={`http://localhost:3001${pet.image_url}`}
             name={pet.name}
           />
         ))}
@@ -94,8 +155,8 @@ const PetGrid: React.FC = () => {
               <Button variant="secondary" onClick={() => setShowModal(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" type="submit">
-                Add Pet
+              <Button variant="primary" type="submit" disabled={isLoading}>
+                {isLoading ? 'Adding...' : 'Add Pet'}
               </Button>
             </div>
           </Form>
