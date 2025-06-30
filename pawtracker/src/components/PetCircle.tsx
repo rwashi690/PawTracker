@@ -1,18 +1,24 @@
 import React from 'react';
 import { Image } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import '../styles/PetCircle.css';
 
 interface PetCircleProps {
+  id?: number;
   imageUrl?: string;
   name?: string;
   isAddButton?: boolean;
   onClick?: () => void;
 }
 
-const PetCircle: React.FC<PetCircleProps> = ({ imageUrl, name, isAddButton, onClick }) => {
+const PetCircle: React.FC<PetCircleProps> = ({ id, imageUrl, name, isAddButton, onClick }) => {
+  const navigate = useNavigate();
   return (
     <div className="text-center">
-      <div className={`pet-circle ${isAddButton ? 'add-button' : ''}`} onClick={onClick}>
+      <div 
+        className={`pet-circle ${isAddButton ? 'add-button' : ''}`} 
+        onClick={isAddButton ? onClick : () => id && navigate(`/pet/${id}`)}
+      >
         {isAddButton ? (
           <i className="bi bi-plus-lg"></i>
         ) : (

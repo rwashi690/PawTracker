@@ -1,0 +1,45 @@
+.pet-profile {
+  padding: 2rem;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.back-button,
+.settings-button {
+  color: #444444 !important;
+  padding: 0.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  text-decoration: none !important;
+}
+
+.back-button:hover,
+.settings-button:hover {
+  color: #b2b2df !important;
+}
+
+.pet-name {
+  margin: 0;
+  color: #444444;
+  font-size: 2rem;
+}
+
+.profile-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.profile-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ccccff;
+}

@@ -17,6 +17,41 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Get a single pet by ID
+router.get('/:id', ensureAuthenticated, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const petId = parseInt(req.params.id);
+    if (isNaN(petId)) {
+      res.status(400).json({ error: 'Invalid pet ID' });
+      return;
+    }
+
+    if (!req.auth?.userId) {
+      res.status(401).json({ error: 'User ID not found in request' });
+      return;
+    }
+
+    // Get the pet
+    const pet = await petService.getPetById(petId);
+    
+    if (!pet) {
+      res.status(404).json({ error: 'Pet not found' });
+      return;
+    }
+
+    // Verify the pet belongs to the authenticated user
+    if (pet.user_id !== req.auth.userId) {
+      res.status(403).json({ error: 'Not authorized to view this pet' });
+      return;
+    }
+
+    res.json(pet);
+  } catch (error) {
+    console.error('Error getting pet:', error);
+    res.status(500).json({ error: 'Failed to get pet', details: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
 // Get all pets for the authenticated user
 router.get('/', ensureAuthenticated, async (req: Request, res: Response): Promise<void> => {
   try {

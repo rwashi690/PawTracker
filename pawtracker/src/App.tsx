@@ -7,6 +7,7 @@ import './styles/App.css';
 
 import FrontPage from './pages/FrontPage';
 import Dashboard from './pages/Dashboard';
+import PetProfile from './pages/PetProfile';
 
 import ClerkProtectedRoute from './components/ClerkProtectedRoute';
 
@@ -29,6 +30,14 @@ function App() {
             element={
               <ClerkProtectedRoute>
                 <Dashboard />
+              </ClerkProtectedRoute>
+            }
+          />
+          <Route
+            path="/pet/:id"
+            element={
+              <ClerkProtectedRoute>
+                <PetProfile />
               </ClerkProtectedRoute>
             }
           />

@@ -142,6 +142,7 @@ const PetGrid: React.FC = () => {
                 {pets.map((pet) => (
                   <PetCircle
                     key={pet.id}
+                    id={pet.id}
                     imageUrl={`http://localhost:3001${pet.image_url}`}
                     name={pet.name}
                   />
