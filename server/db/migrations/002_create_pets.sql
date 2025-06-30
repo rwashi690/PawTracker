@@ -24,6 +24,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_pets_updated_at ON pets;
+
 CREATE TRIGGER update_pets_updated_at
     BEFORE UPDATE ON pets
     FOR EACH ROW

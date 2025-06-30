@@ -1,12 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { UserButton, useUser } from '@clerk/clerk-react';
+import { UserButton, useUser, useAuth } from '@clerk/clerk-react';
 
 import PetGrid from '../components/PetGrid';
 
-const createUserInDatabase = async (user: any) => {
+const createUserInDatabase = async (user: any, getToken: () => Promise<string | null>) => {
     try {
-      const token = await user.getToken();
+      const token = await getToken();
+      if (!token) throw new Error('Failed to get authentication token');
   
       const response = await fetch('http://localhost:3001/api/users', {
         method: 'POST',
@@ -81,6 +82,7 @@ const createUserInDatabase = async (user: any) => {
 
 const Dashboard = () => {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -91,7 +93,7 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         setError(null);
-        await createUserInDatabase(user);
+        await createUserInDatabase(user, getToken);
       } catch (err) {
         console.error('Error initializing user:', err);
         // Don't show the duplicate key error to users
@@ -104,7 +106,7 @@ const Dashboard = () => {
     };
 
     initializeUser();
-  }, [user]);
+  }, [user, getToken]);
 
   if (!user) {
     return <Navigate to="/" />;
