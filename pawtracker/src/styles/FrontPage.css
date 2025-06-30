@@ -1,0 +1,58 @@
+.content-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  max-width: 600px !important;
+  width: 90% !important;
+  margin: 0 auto !important;
+}
+
+.content-container h1 {
+  color: #b2b2df !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 2.5rem !important;
+}
+
+.content-container p {
+  color: #333 !important;
+  margin-bottom: 2rem !important;
+  font-size: 1.25rem !important;
+}
+
+.button-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  max-width: 300px !important;
+}
+
+.btn-primary {
+  background-color: #ccccff !important;
+  border-color: #ccccff !important;
+  color: #b2b2df !important;
+  width: 100% !important;
+  font-size: 1.1rem !important;
+  padding: 0.75rem !important;
+  margin: 0.5rem 0 !important;
+}
+
+.btn-outline-primary {
+  border-color: #ccccff !important;
+  color: #b2b2df !important;
+  width: 100% !important;
+  font-size: 1.1rem !important;
+  padding: 0.75rem !important;
+  margin: 0.5rem 0 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #ccccff !important;
+  color: #b2b2df !important;
+}
+
+.content-container .btn:hover {
+  transform: translateY(-2px);
+}

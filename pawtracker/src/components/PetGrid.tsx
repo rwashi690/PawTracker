@@ -177,11 +177,11 @@ const PetGrid: React.FC = () => {
                 required
               />
             </Form.Group>
-            <div className="d-flex justify-content-end gap-2">
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
+            <div className="modal-buttons">
+              <Button variant="secondary" onClick={() => setShowModal(false)} className="w-100">
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={isLoading}>
+              <Button variant="primary" type="submit" disabled={isLoading} className="w-100">
                 {isLoading ? 'Adding...' : 'Add Pet'}
               </Button>
             </div>
