@@ -23,6 +23,8 @@ const PetGrid: React.FC = () => {
 
   const fetchPets = useCallback(async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const token = await getToken();
       if (!token) {
         setError('Not authenticated. Please sign in.');
@@ -42,7 +44,9 @@ const PetGrid: React.FC = () => {
       setPets(data);
     } catch (error) {
       console.error('Error fetching pets:', error);
-      setError('Failed to load pets');
+      setError('Failed to load pets. Please try refreshing the page.');
+    } finally {
+      setIsLoading(false);
     }
   }, [getToken, setError, setPets]);
 
@@ -117,14 +121,36 @@ const PetGrid: React.FC = () => {
             {error}
           </Alert>
         )}
-        {pets.map((pet) => (
-          <PetCircle
-            key={pet.id}
-            imageUrl={`http://localhost:3001${pet.image_url}`}
-            name={pet.name}
-          />
-        ))}
-        <PetCircle isAddButton onClick={handleAddPet} />
+        
+        {isLoading ? (
+          <div className="text-center w-100 py-4">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading pets...</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            {pets.length === 0 ? (
+              <div className="text-center w-100 py-4">
+                <p className="text-muted mb-3">No pets added yet.</p>
+                <Button variant="primary" onClick={handleAddPet}>
+                  Add Your First Pet
+                </Button>
+              </div>
+            ) : (
+              <>
+                {pets.map((pet) => (
+                  <PetCircle
+                    key={pet.id}
+                    imageUrl={`http://localhost:3001${pet.image_url}`}
+                    name={pet.name}
+                  />
+                ))}
+                <PetCircle isAddButton onClick={handleAddPet} />
+              </>
+            )}
+          </>
+        )}
       </div>
 
       <Modal show={showModal} onHide={() => setShowModal(false)}>

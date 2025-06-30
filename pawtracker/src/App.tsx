@@ -7,6 +7,7 @@ import './styles/App.css';
 
 import FrontPage from './pages/FrontPage';
 import Dashboard from './pages/Dashboard';
+
 import ClerkProtectedRoute from './components/ClerkProtectedRoute';
 
 const clerkPubKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || '';

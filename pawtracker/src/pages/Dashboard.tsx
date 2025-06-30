@@ -1,31 +1,137 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
-import { Container, Row, Col, Navbar } from 'react-bootstrap';
+
 import PetGrid from '../components/PetGrid';
 
-const Dashboard: React.FC = () => {
+const createUserInDatabase = async (user: any) => {
+    try {
+      const token = await user.getToken();
+  
+      const response = await fetch('http://localhost:3001/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          clerkId: user.id,
+          email: user.primaryEmailAddress?.emailAddress,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }),
+      });
+  
+      const contentType = response.headers.get('content-type');
+      let data: any;
+  
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { error: text };
+      }
+  
+      if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
+        throw new Error(data.error || 'Failed to create user in database');
+      }
+  
+      return data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error instanceof Error ? error : new Error(String(error));
+    }
+  };
+  
+// const createUserInDatabase = async (user: any) => {
+//   try {
+//     const token = await user.getToken();
+//     const response = await fetch('http://localhost:3001/api/users', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`,
+//       },
+//       body: JSON.stringify({
+//         clerkId: user.id,
+//         email: user.primaryEmailAddress?.emailAddress,
+//         firstName: user.firstName,
+//         lastName: user.lastName,
+//       }),
+//     });
+
+//     const data = await response.json();
+    
+//     // If we get a duplicate key error, that's fine - the user already exists
+//     if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
+//       throw new Error(data.error || 'Failed to create user in database');
+//     }
+
+//     return data;
+//   } catch (error) {
+//     console.error('Error creating user:', error);
+//     // If it's already an Error object, throw it as is
+//     if (error instanceof Error) {
+//       throw error;
+//     }
+//     // Otherwise wrap it in an Error object
+//     throw new Error('Failed to create user in database');
+//   }
+// };
+
+const Dashboard = () => {
   const { user } = useUser();
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const initializeUser = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        await createUserInDatabase(user);
+      } catch (err) {
+        console.error('Error initializing user:', err);
+        // Don't show the duplicate key error to users
+        if (err instanceof Error && !err.message.includes('users_clerk_id_key')) {
+          setError('Error initializing user data. Please try refreshing the page.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeUser();
+  }, [user]);
+
+  if (!user) {
+    return <Navigate to="/" />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container py-4 text-center">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-vh-100 bg-light">
-      <Navbar bg="white" expand="lg" className="shadow-sm mb-4">
-        <Container>
-          <Navbar.Brand href="/dashboard">PawTracker</Navbar.Brand>
-          <div className="ms-auto d-flex align-items-center gap-3">
-            <span>Welcome, {user?.firstName || 'User'}!</span>
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        </Container>
-      </Navbar>
-
-      <Container>
-        <Row>
-          <Col>
-            <h1 className="mb-4">My Pets</h1>
-            <PetGrid />
-          </Col>
-        </Row>
-      </Container>
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Welcome, {user.firstName}! 🐾</h1>
+        <UserButton />
+      </div>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+      <PetGrid />
     </div>
   );
 };
