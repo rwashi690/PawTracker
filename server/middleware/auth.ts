@@ -82,11 +82,9 @@ export const ensureAuthenticated = (
     });
   } catch (error) {
     console.error('❌ Auth middleware error:', error);
-    res
-      .status(500)
-      .json({
-        error: 'Authentication service error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      });
+    res.status(500).json({
+      error: 'Authentication service error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };

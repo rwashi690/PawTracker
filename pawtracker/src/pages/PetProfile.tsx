@@ -4,12 +4,7 @@ import { Container, Button, Alert } from 'react-bootstrap';
 import { ArrowLeft, Settings } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import '../styles/PetProfile.css';
-
-interface Pet {
-  id: number;
-  name: string;
-  image_url: string;
-}
+import { fetchPet, Pet } from '../utils/fetchPets';
 
 const PetProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -20,41 +15,23 @@ const PetProfile: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchPet = async () => {
+    const loadPet = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const token = await getToken();
-        if (!token) {
-          setError('Not authenticated. Please sign in.');
-          return;
-        }
-
-        const response = await fetch(`http://localhost:3001/api/pets/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch pet details');
-        }
-
-        const data = await response.json();
+        const data = await fetchPet(id, getToken);
         setPet(data);
-      } catch (error) {
-        console.error('Error fetching pet:', error);
-        setError('Failed to load pet details');
+      } catch (err: any) {
+        console.error('Error fetching pet:', err);
+        setError(err.message || 'Failed to load pet details');
       } finally {
         setIsLoading(false);
       }
     };
 
     if (id) {
-      fetchPet();
+      loadPet();
     }
   }, [id, getToken]);
 
@@ -91,9 +68,7 @@ const PetProfile: React.FC = () => {
         <Button
           variant="link"
           className="settings-button"
-          onClick={() => {
-            /* TODO: Add settings functionality */
-          }}
+          onClick={() => navigate(`/pet/${pet.id}/settings`)}
         >
           <Settings size={24} />
         </Button>

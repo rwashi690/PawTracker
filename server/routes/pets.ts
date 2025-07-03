@@ -51,12 +51,10 @@ router.get(
       res.json(pet);
     } catch (error) {
       console.error('Error getting pet:', error);
-      res
-        .status(500)
-        .json({
-          error: 'Failed to get pet',
-          details: error instanceof Error ? error.message : 'Unknown error',
-        });
+      res.status(500).json({
+        error: 'Failed to get pet',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 );
@@ -95,12 +93,10 @@ router.get(
       res.json(pets);
     } catch (error) {
       console.error('Error getting pets:', error);
-      res
-        .status(500)
-        .json({
-          error: 'Failed to get pets',
-          details: error instanceof Error ? error.message : 'Unknown error',
-        });
+      res.status(500).json({
+        error: 'Failed to get pets',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 );
