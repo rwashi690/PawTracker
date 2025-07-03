@@ -27,6 +27,11 @@ const makeAuthenticatedRequest = async (
     throw new Error(`Request failed: ${response.statusText}`);
   }
 
+  // For 204 No Content responses, don't try to parse JSON
+  if (response.status === 204) {
+    return;
+  }
+
   return response.json();
 };
 
