@@ -15,12 +15,13 @@ const FrontPage: React.FC = () => {
   }, [isSignedIn, navigate]);
 
   return (
-    <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <Container
+      fluid
+      className="min-vh-100 d-flex align-items-center justify-content-center bg-light"
+    >
       <div className="content-container">
         <h1>Welcome to PawTracker!</h1>
-        <p>
-          Keep track of your pets' information in one place
-        </p>
+        <p>Keep track of your pets' information in one place</p>
         <div className="button-container">
           {!isSignedIn ? (
             <>

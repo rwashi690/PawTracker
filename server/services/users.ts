@@ -7,7 +7,12 @@ interface CreateUserParams {
   lastName?: string;
 }
 
-export const createUser = async ({ clerkId, email, firstName, lastName }: CreateUserParams) => {
+export const createUser = async ({
+  clerkId,
+  email,
+  firstName,
+  lastName,
+}: CreateUserParams) => {
   // First try to find existing user
   const existingUser = await query(
     'SELECT * FROM users WHERE clerk_id = $1 OR email = $2',

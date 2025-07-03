@@ -4,46 +4,49 @@ import { UserButton, useUser, useAuth } from '@clerk/clerk-react';
 
 import PetGrid from '../components/PetGrid';
 
-const createUserInDatabase = async (user: any, getToken: () => Promise<string | null>) => {
-    try {
-      const token = await getToken();
-      if (!token) throw new Error('Failed to get authentication token');
-  
-      const response = await fetch('http://localhost:3001/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          clerkId: user.id,
-          email: user.primaryEmailAddress?.emailAddress,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        }),
-      });
-  
-      const contentType = response.headers.get('content-type');
-      let data: any;
-  
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        data = { error: text };
-      }
-  
-      if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
-        throw new Error(data.error || 'Failed to create user in database');
-      }
-  
-      return data;
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error instanceof Error ? error : new Error(String(error));
+const createUserInDatabase = async (
+  user: any,
+  getToken: () => Promise<string | null>
+) => {
+  try {
+    const token = await getToken();
+    if (!token) throw new Error('Failed to get authentication token');
+
+    const response = await fetch('http://localhost:3001/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        clerkId: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      }),
+    });
+
+    const contentType = response.headers.get('content-type');
+    let data: any;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      data = { error: text };
     }
-  };
-  
+
+    if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
+      throw new Error(data.error || 'Failed to create user in database');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+};
+
 // const createUserInDatabase = async (user: any) => {
 //   try {
 //     const token = await user.getToken();
@@ -62,7 +65,7 @@ const createUserInDatabase = async (user: any, getToken: () => Promise<string | 
 //     });
 
 //     const data = await response.json();
-    
+
 //     // If we get a duplicate key error, that's fine - the user already exists
 //     if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
 //       throw new Error(data.error || 'Failed to create user in database');
@@ -97,8 +100,13 @@ const Dashboard = () => {
       } catch (err) {
         console.error('Error initializing user:', err);
         // Don't show the duplicate key error to users
-        if (err instanceof Error && !err.message.includes('users_clerk_id_key')) {
-          setError('Error initializing user data. Please try refreshing the page.');
+        if (
+          err instanceof Error &&
+          !err.message.includes('users_clerk_id_key')
+        ) {
+          setError(
+            'Error initializing user data. Please try refreshing the page.'
+          );
         }
       } finally {
         setIsLoading(false);

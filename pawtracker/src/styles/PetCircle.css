@@ -9,7 +9,9 @@
   align-items: center;
   cursor: pointer;
   margin: 10px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .pet-circle:hover {

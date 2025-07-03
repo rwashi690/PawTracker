@@ -11,12 +11,18 @@ interface PetCircleProps {
   onClick?: () => void;
 }
 
-const PetCircle: React.FC<PetCircleProps> = ({ id, imageUrl, name, isAddButton, onClick }) => {
+const PetCircle: React.FC<PetCircleProps> = ({
+  id,
+  imageUrl,
+  name,
+  isAddButton,
+  onClick,
+}) => {
   const navigate = useNavigate();
   return (
     <div className="text-center">
-      <div 
-        className={`pet-circle ${isAddButton ? 'add-button' : ''}`} 
+      <div
+        className={`pet-circle ${isAddButton ? 'add-button' : ''}`}
         onClick={isAddButton ? onClick : () => id && navigate(`/pet/${id}`)}
       >
         {isAddButton ? (

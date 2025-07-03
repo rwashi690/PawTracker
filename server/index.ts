@@ -13,18 +13,20 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'clerk-token',
-    'Clerk-Session-Id',
-    'Clerk-Session-Token',
-  ],
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'clerk-token',
+      'Clerk-Session-Id',
+      'Clerk-Session-Token',
+    ],
+  })
+);
 app.use(express.json());
 
 // Serve static files from uploads directory
@@ -45,7 +47,9 @@ app.get('/api/health', async (req: Request, res: Response): Promise<void> => {
     res.json({ status: 'healthy', timestamp: result.rows[0].now });
   } catch (error) {
     console.error('Database connection error:', error);
-    res.status(500).json({ status: 'error', message: 'Database connection failed' });
+    res
+      .status(500)
+      .json({ status: 'error', message: 'Database connection failed' });
   }
 });
 
@@ -53,7 +57,7 @@ app.get('/api/health', async (req: Request, res: Response): Promise<void> => {
 app.post('/api/users', async (req: Request, res: Response): Promise<void> => {
   try {
     const { clerkId, email, firstName, lastName } = req.body;
-    
+
     if (!clerkId || !email) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
@@ -63,11 +67,12 @@ app.post('/api/users', async (req: Request, res: Response): Promise<void> => {
     // Even if the user already existed, we return 200 since the user data was successfully retrieved/updated
     res.status(200).json({
       user,
-      message: 'User created or updated successfully'
+      message: 'User created or updated successfully',
     });
   } catch (error) {
     console.error('Error creating user:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    const message =
+      error instanceof Error ? error.message : 'Unknown error occurred';
     res.status(500).json({ error: message });
   }
 });

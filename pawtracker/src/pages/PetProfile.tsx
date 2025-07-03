@@ -24,7 +24,7 @@ const PetProfile: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const token = await getToken();
         if (!token) {
           setError('Not authenticated. Please sign in.');
@@ -33,10 +33,10 @@ const PetProfile: React.FC = () => {
 
         const response = await fetch(`http://localhost:3001/api/pets/${id}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          credentials: 'include'
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -79,8 +79,8 @@ const PetProfile: React.FC = () => {
   return (
     <Container fluid className="pet-profile">
       <div className="profile-header">
-        <Button 
-          variant="link" 
+        <Button
+          variant="link"
           className="back-button"
           onClick={() => navigate('/dashboard')}
         >
@@ -88,18 +88,20 @@ const PetProfile: React.FC = () => {
           Back
         </Button>
         <h1 className="pet-name">{pet.name}'s Page</h1>
-        <Button 
-          variant="link" 
+        <Button
+          variant="link"
           className="settings-button"
-          onClick={() => {/* TODO: Add settings functionality */}}
+          onClick={() => {
+            /* TODO: Add settings functionality */
+          }}
         >
           <Settings size={24} />
         </Button>
       </div>
       <div className="profile-image-container">
-        <img 
-          src={`http://localhost:3001${pet.image_url}`} 
-          alt={pet.name} 
+        <img
+          src={`http://localhost:3001${pet.image_url}`}
+          alt={pet.name}
           className="profile-image"
         />
       </div>

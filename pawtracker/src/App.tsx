@@ -8,13 +8,16 @@ import './styles/App.css';
 import FrontPage from './pages/FrontPage';
 import Dashboard from './pages/Dashboard';
 import PetProfile from './pages/PetProfile';
+import Settings from './pages/Settings';
 
 import ClerkProtectedRoute from './components/ClerkProtectedRoute';
 
 const clerkPubKey = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || '';
 
 if (!clerkPubKey) {
-  throw new Error('Missing REACT_APP_CLERK_PUBLISHABLE_KEY - Please add it to your .env file');
+  throw new Error(
+    'Missing REACT_APP_CLERK_PUBLISHABLE_KEY - Please add it to your .env file'
+  );
 }
 
 function App() {
@@ -38,6 +41,14 @@ function App() {
             element={
               <ClerkProtectedRoute>
                 <PetProfile />
+              </ClerkProtectedRoute>
+            }
+          />
+          <Route
+            path="/pet/:id/settings"
+            element={
+              <ClerkProtectedRoute>
+                <Settings />
               </ClerkProtectedRoute>
             }
           />

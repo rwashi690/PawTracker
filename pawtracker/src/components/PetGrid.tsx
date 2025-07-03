@@ -32,10 +32,10 @@ const PetGrid: React.FC = () => {
       }
       const response = await fetch('http://localhost:3001/api/pets', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
       });
       if (!response.ok) {
         throw new Error('Failed to fetch pets');
@@ -86,16 +86,18 @@ const PetGrid: React.FC = () => {
       const response = await fetch('http://localhost:3001/api/pets', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
-        credentials: 'include'
+        credentials: 'include',
       });
-      
+
       if (response.status === 404) {
-        throw new Error('User not found. Please make sure you are properly signed in.');
+        throw new Error(
+          'User not found. Please make sure you are properly signed in.'
+        );
       }
-      
+
       if (!response.ok) {
         throw new Error('Failed to add pet');
       }
@@ -117,11 +119,16 @@ const PetGrid: React.FC = () => {
     <Container>
       <div className="pet-grid">
         {error && (
-          <Alert variant="danger" className="w-100" onClose={() => setError(null)} dismissible>
+          <Alert
+            variant="danger"
+            className="w-100"
+            onClose={() => setError(null)}
+            dismissible
+          >
             {error}
           </Alert>
         )}
-        
+
         {isLoading ? (
           <div className="text-center w-100 py-4">
             <div className="spinner-border" role="status">
@@ -165,7 +172,9 @@ const PetGrid: React.FC = () => {
               <Form.Control
                 type="text"
                 value={newPetName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPetName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPetName(e.target.value)
+                }
                 required
               />
             </Form.Group>
@@ -179,10 +188,19 @@ const PetGrid: React.FC = () => {
               />
             </Form.Group>
             <div className="modal-buttons">
-              <Button variant="secondary" onClick={() => setShowModal(false)} className="w-100">
+              <Button
+                variant="secondary"
+                onClick={() => setShowModal(false)}
+                className="w-100"
+              >
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={isLoading} className="w-100">
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={isLoading}
+                className="w-100"
+              >
                 {isLoading ? 'Adding...' : 'Add Pet'}
               </Button>
             </div>

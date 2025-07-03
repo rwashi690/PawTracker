@@ -35,17 +35,26 @@ export class PetService {
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
-    const values = [pet.name, pet.breed, pet.birthdate, pet.user_id, pet.image_url];
-    
+    const values = [
+      pet.name,
+      pet.breed,
+      pet.birthdate,
+      pet.user_id,
+      pet.image_url,
+    ];
+
     const result = await this.pool.query(query, values);
     return result.rows[0];
   }
 
-  async updatePet(petId: number, updates: Partial<CreatePetDTO>): Promise<Pet | null> {
+  async updatePet(
+    petId: number,
+    updates: Partial<CreatePetDTO>
+  ): Promise<Pet | null> {
     const setClause = Object.keys(updates)
       .map((key, index) => `${key} = $${index + 2}`)
       .join(', ');
-    
+
     const values = [petId, ...Object.values(updates)];
     const query = `
       UPDATE pets
@@ -53,7 +62,7 @@ export class PetService {
       WHERE id = $1
       RETURNING *
     `;
-    
+
     const result = await this.pool.query(query, values);
     return result.rows[0] || null;
   }

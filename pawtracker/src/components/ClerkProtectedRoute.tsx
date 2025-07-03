@@ -6,7 +6,9 @@ interface ClerkProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({ children }) => {
+const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({
+  children,
+}) => {
   const { isSignedIn, isLoaded } = useUser();
 
   if (!isLoaded) {
@@ -17,7 +19,7 @@ const ClerkProtectedRoute: React.FC<ClerkProtectedRouteProps> = ({ children }) =
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 };
 
 export default ClerkProtectedRoute;

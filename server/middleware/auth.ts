@@ -21,7 +21,11 @@ declare global {
 }
 
 // Middleware to ensure user is authenticated
-export const ensureAuthenticated = (req: Request, res: Response, next: NextFunction): void => {
+export const ensureAuthenticated = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   try {
     console.log('🔒 Auth Middleware - Request details:', {
       url: req.originalUrl,
@@ -29,14 +33,15 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
       authHeader: req.headers.authorization,
       clerkToken: req.headers['clerk-token'],
       sessionId: req.headers['clerk-session-id'],
-      sessionToken: req.headers['clerk-session-token']
+      sessionToken: req.headers['clerk-session-token'],
     });
 
     console.log('🔑 Clerk Configuration:', {
-      publishableKey: process.env.CLERK_PUBLISHABLE_KEY?.substring(0, 8) + '...',
-      secretKey: process.env.CLERK_SECRET_KEY ? '✓ Present' : '❌ Missing'
+      publishableKey:
+        process.env.CLERK_PUBLISHABLE_KEY?.substring(0, 8) + '...',
+      secretKey: process.env.CLERK_SECRET_KEY ? '✓ Present' : '❌ Missing',
     });
-    
+
     if (!process.env.CLERK_SECRET_KEY) {
       console.error('❌ Missing CLERK_SECRET_KEY');
       res.status(500).json({ error: 'Authentication configuration error' });
@@ -49,18 +54,20 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
         console.error('❌ Authentication error:', {
           message: err.message,
           stack: err.stack,
-          type: err.type
+          type: err.type,
         });
-        res.status(401).json({ error: 'Authentication required', details: err.message });
+        res
+          .status(401)
+          .json({ error: 'Authentication required', details: err.message });
         return;
       }
-      
+
       console.log('✅ Auth successful:', {
         userId: req.auth?.userId,
         sessionId: req.auth?.sessionId,
-        claims: req.auth?.claims
+        claims: req.auth?.claims,
       });
-      
+
       if (!req.auth?.userId) {
         console.error('❌ No user ID in request after successful auth');
         res.status(401).json({ error: 'User ID not found' });
@@ -70,11 +77,16 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
       // Add user ID to request for downstream use
       req.auth = { ...req.auth, userId: req.auth.userId };
       console.log('✅ User ID set:', req.auth.userId);
-      
+
       next();
     });
   } catch (error) {
     console.error('❌ Auth middleware error:', error);
-    res.status(500).json({ error: 'Authentication service error', details: error instanceof Error ? error.message : 'Unknown error' });
+    res
+      .status(500)
+      .json({
+        error: 'Authentication service error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
   }
 };
