@@ -7,11 +7,13 @@ import {
   Form,
   ListGroup,
   Alert,
+  Toast,
 } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import DropdownComponent from '../components/DropdownComponent';
+import BreedDropdown from '../components/BreedDropdown';
 import {
   fetchPet,
   updatePet,
@@ -35,6 +37,7 @@ const SettingsPage: React.FC = () => {
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [newTask, setNewTask] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Date state
@@ -128,8 +131,10 @@ const SettingsPage: React.FC = () => {
         species: pet.species
       };
 
-      const updatedPet = await updatePet(id, formUpdates, getToken);
-      setPet(updatedPet);
+      setError('');
+      await updatePet(id, formUpdates, getToken);
+      setPet({ ...pet, ...formUpdates });
+      setShowToast(true);
     } catch (err: any) {
       setError(err.message || 'Failed to update pet');
     }
@@ -241,11 +246,23 @@ const SettingsPage: React.FC = () => {
 
           <Row className="mb-3">
             <Col md={6}>
-              <DropdownComponent
-                label="Sex"
-                options={sexOptions}
-                value={pet.sex || ''}
-                onChange={(value) => handleUpdatePet({ sex: value })}
+              <Form.Group className="mb-3">
+                <Form.Label>Sex</Form.Label>
+                <Form.Select
+                  value={pet.sex || ''}
+                  onChange={(e) => handleUpdatePet({ sex: e.target.value })}
+                  title="Select pet sex"
+                >
+                  <option value="">Select sex</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </Form.Select>
+              </Form.Group>
+
+              <BreedDropdown
+                species={pet.species || ''}
+                value={pet.breed || ''}
+                onChange={(value) => handleUpdatePet({ breed: value })}
               />
             </Col>
             <Col md={6}>
@@ -323,6 +340,22 @@ const SettingsPage: React.FC = () => {
           </div>
         </Col>
       </Row>
+      <Toast
+        onClose={() => setShowToast(false)}
+        show={showToast}
+        delay={3000}
+        autohide
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          minWidth: '200px',
+          backgroundColor: '#9999ff',
+          color: '#ffffff'
+        }}
+      >
+        <Toast.Body>Pet updated successfully!</Toast.Body>
+      </Toast>
     </Container>
   );
 };
