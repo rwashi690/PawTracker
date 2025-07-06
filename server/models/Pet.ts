@@ -1,6 +1,6 @@
 export interface Pet {
   id: number;
-  user_id: string;
+  user_id: number;
   name: string;
   breed: string | null;
   birthdate: Date | null;
@@ -13,6 +13,6 @@ export interface CreatePetDTO {
   name: string;
   breed: string | null;
   birthdate: Date | null;
-  user_id: string;
+  user_id: number;
   image_url: string | null;
 }

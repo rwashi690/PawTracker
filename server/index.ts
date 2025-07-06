@@ -6,6 +6,7 @@ import { createUser } from './services/users';
 import { pool } from './db/db';
 import petsRouter from './routes/pets';
 import tasksRouter from './routes/tasks';
+import preventativesRouter from './routes/preventatives';
 import { ensureAuthenticated } from './middleware/auth';
 
 dotenv.config();
@@ -41,6 +42,7 @@ app.get('/api/test', (req: Request, res: Response) => {
 // Routes
 app.use('/api/pets', petsRouter);
 app.use('/api', tasksRouter); // Adding tasks routes
+app.use('/api/preventatives', preventativesRouter); // Adding preventatives routes
 
 // Health check endpoint
 app.get('/api/health', async (req: Request, res: Response): Promise<void> => {

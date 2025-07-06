@@ -148,7 +148,9 @@ router.post(
         return;
       }
 
-      if (task.user_id !== req.auth?.userId) {
+      // Use internalId for comparison since user_id is numeric
+      if (task.user_id !== req.auth?.internalId) {
+        console.log('Auth failed:', { taskUserId: task.user_id, authInternalId: req.auth?.internalId });
         res.status(403).json({ error: 'Not authorized to complete this task' });
         return;
       }
@@ -164,6 +166,47 @@ router.post(
     } catch (error) {
       console.error('Error marking task as complete:', error);
       res.status(500).json({ error: 'Failed to mark task as complete' });
+    }
+  }
+);
+
+// Get task completions for a specific task and date
+router.get(
+  '/tasks/:taskId/completions/:date',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      const date = req.params.date;
+
+      // First verify the task's pet belongs to the user
+      const {
+        rows: [task],
+      } = await db.query(
+        'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+        [taskId]
+      );
+
+      if (!task) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+
+      if (task.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to view this task' });
+        return;
+      }
+
+      const { rows: completions } = await db.query(
+        'SELECT * FROM task_completions WHERE task_id = $1 AND DATE(completion_date) = $2',
+        [taskId, date]
+      );
+
+      // Return the completion if found, null if not completed
+      res.json(completions[0] || null);
+    } catch (error) {
+      console.error('Error fetching task completion:', error);
+      res.status(500).json({ error: 'Failed to fetch task completion' });
     }
   }
 );

@@ -8,7 +8,7 @@ export class PetService {
     this.pool = pool;
   }
 
-  async getPetsByUserId(userId: string): Promise<Pet[]> {
+  async getPetsByUserId(userId: number): Promise<Pet[]> {
     const query = `
       SELECT *
       FROM pets

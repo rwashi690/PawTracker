@@ -43,7 +43,7 @@ router.get(
       }
 
       // Verify the pet belongs to the authenticated user
-      if (pet.user_id !== req.auth.userId) {
+      if (pet.user_id !== req.auth.internalId) {
         res.status(403).json({ error: 'Not authorized to view this pet' });
         return;
       }
@@ -71,24 +71,13 @@ router.get(
         auth: req.auth,
       });
 
-      if (!req.auth?.userId) {
-        console.error('No user ID found in request');
-        res.status(401).json({ error: 'User ID not found in request' });
+      if (!req.auth?.internalId) {
+        res.status(401).json({ error: 'Not authenticated' });
         return;
       }
 
-      // First verify the user exists in our database
-      const userQuery = 'SELECT clerk_id FROM users WHERE clerk_id = $1';
-      const userResult = await pool.query(userQuery, [req.auth.userId]);
-
-      if (!userResult.rows[0]) {
-        console.error('User not found in database:', req.auth.userId);
-        res.status(404).json({ error: 'User not found' });
-        return;
-      }
-
-      console.log('Fetching pets for user:', req.auth.userId);
-      const pets = await petService.getPetsByUserId(req.auth.userId);
+      console.log('Fetching pets for user:', { clerkId: req.auth.userId, internalId: req.auth.internalId });
+      const pets = await petService.getPetsByUserId(req.auth.internalId);
       console.log('Found pets:', pets);
       res.json(pets);
     } catch (error) {
@@ -114,19 +103,8 @@ router.post(
         userId: req.auth?.userId,
       });
 
-      if (!req.auth?.userId) {
-        console.error('No user ID found in request');
-        res.status(401).json({ error: 'User ID not found in request' });
-        return;
-      }
-
-      // First verify the user exists in our database
-      const userQuery = 'SELECT clerk_id FROM users WHERE clerk_id = $1';
-      const userResult = await pool.query(userQuery, [req.auth.userId]);
-
-      if (!userResult.rows[0]) {
-        console.error('User not found in database:', req.auth.userId);
-        res.status(404).json({ error: 'User not found' });
+      if (!req.auth?.internalId) {
+        res.status(401).json({ error: 'Not authenticated' });
         return;
       }
 
@@ -152,7 +130,7 @@ router.post(
         breed,
         birthdate: birthdate ? new Date(birthdate) : null,
         image_url,
-        user_id: req.auth.userId,
+        user_id: req.auth.internalId,
       });
 
       console.log('Pet created successfully:', pet);
@@ -181,7 +159,7 @@ router.get(
         return;
       }
 
-      if (pet.user_id !== req.auth?.userId) {
+      if (pet.user_id !== req.auth?.internalId) {
         res.status(403).json({ error: 'Not authorized to view this pet' });
         return;
       }
@@ -208,7 +186,7 @@ router.put(
         return;
       }
 
-      if (pet.user_id !== req.auth?.userId) {
+      if (pet.user_id !== req.auth?.internalId) {
         res.status(403).json({ error: 'Not authorized to update this pet' });
         return;
       }
@@ -237,7 +215,7 @@ router.put(
         return;
       }
 
-      if (pet.user_id !== req.auth?.userId) {
+      if (pet.user_id !== req.auth?.internalId) {
         res.status(403).json({ error: 'Not authorized to update this pet' });
         return;
       }
@@ -277,7 +255,7 @@ router.delete(
         return;
       }
 
-      if (pet.user_id !== req.auth?.userId) {
+      if (pet.user_id !== req.auth?.internalId) {
         res.status(403).json({ error: 'Not authorized to delete this pet' });
         return;
       }
@@ -295,6 +273,87 @@ router.delete(
     } catch (error) {
       console.error('Error deleting pet:', error);
       res.status(500).json({ error: 'Failed to delete pet' });
+    }
+  }
+);
+
+// Get tasks for a pet
+router.get(
+  '/:id/tasks',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    console.log('Getting tasks for pet:', {
+      petId: req.params.id,
+      userId: req.auth?.userId,
+      internalId: req.auth?.internalId
+    });
+    try {
+      const petId = parseInt(req.params.id);
+      console.log('Getting tasks for pet:', { petId, auth: req.auth });
+      const pet = await petService.getPetById(petId);
+      console.log('Found pet:', pet);
+
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      console.log('Checking authorization:', { petUserId: pet.user_id, internalId: req.auth?.internalId });
+      if (pet.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to view this pet\'s tasks' });
+        return;
+      }
+
+      const query = `
+        SELECT *
+        FROM daily_tasks
+        WHERE pet_id = $1
+        ORDER BY created_at DESC
+      `;
+      const result = await pool.query(query, [petId]);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error getting pet tasks:', error);
+      res.status(500).json({ error: 'Failed to get pet tasks' });
+    }
+  }
+);
+
+// Create a task for a pet
+router.post(
+  '/:id/tasks',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const petId = parseInt(req.params.id);
+      const pet = await petService.getPetById(petId);
+
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      if (pet.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to add tasks to this pet' });
+        return;
+      }
+
+      const { task_name } = req.body;
+      if (!task_name) {
+        res.status(400).json({ error: 'Task name is required' });
+        return;
+      }
+
+      const query = `
+        INSERT INTO daily_tasks (pet_id, task_name)
+        VALUES ($1, $2)
+        RETURNING *
+      `;
+      const result = await pool.query(query, [petId, task_name]);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error creating pet task:', error);
+      res.status(500).json({ error: 'Failed to create pet task' });
     }
   }
 );

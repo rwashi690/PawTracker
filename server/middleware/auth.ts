@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { ClerkExpressRequireAuth, clerkClient } from '@clerk/clerk-sdk-node';
+import { pool } from '../db/db';
 
 // Ensure Clerk environment variables are set
 if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
@@ -15,6 +16,7 @@ declare global {
         userId?: string;
         sessionId?: string;
         claims?: Record<string, any>;
+        internalId: number;
       };
     }
   }
@@ -49,7 +51,7 @@ export const ensureAuthenticated = (
     }
 
     const clerkAuth = ClerkExpressRequireAuth();
-    clerkAuth(req, res, (err?: any) => {
+    clerkAuth(req, res, async (err?: any) => {
       if (err) {
         console.error('❌ Authentication error:', {
           message: err.message,
@@ -78,7 +80,49 @@ export const ensureAuthenticated = (
       req.auth = { ...req.auth, userId: req.auth.userId };
       console.log('✅ User ID set:', req.auth.userId);
 
-      next();
+      // Get internal user ID from clerk_id
+      try {
+        if (!req.auth?.userId) {
+          throw new Error('No user ID in request');
+        }
+
+        const userQuery = 'SELECT id FROM users WHERE clerk_id = $1';
+        console.log('Looking up user:', { clerkId: req.auth.userId });
+        const userResult = await pool.query(userQuery, [req.auth.userId]);
+        console.log('User lookup result:', userResult.rows);
+
+        if (!userResult.rows[0]) {
+          const clerkUser = await clerkClient.users.getUser(req.auth.userId);
+          const email = clerkUser.emailAddresses[0]?.emailAddress;
+          if (!email) {
+            throw new Error('User has no email address');
+          }
+
+          const insertQuery = `
+            INSERT INTO users (clerk_id, email, first_name, last_name)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+          `;
+          const insertResult = await pool.query(insertQuery, [
+            req.auth.userId,
+            email,
+            clerkUser.firstName || null,
+            clerkUser.lastName || null
+          ]);
+
+          req.auth.internalId = insertResult.rows[0].id;
+          console.log('Created new user with ID:', req.auth.internalId);
+        } else {
+          req.auth.internalId = userResult.rows[0].id;
+          console.log('Found existing user with ID:', req.auth.internalId);
+        }
+
+        console.log('Set internal user ID:', req.auth.internalId);
+        next();
+      } catch (error) {
+        console.error('❌ Error getting/creating user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
     });
   } catch (error) {
     console.error('❌ Auth middleware error:', error);
