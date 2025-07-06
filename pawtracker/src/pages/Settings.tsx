@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MonthlyPreventatives from '../components/MonthlyPreventatives';
 import {
   Container,
   Row,
@@ -28,6 +29,8 @@ import CircularPlusButton from '../components/CircularPlusButton';
 import DateDropdowns from '../components/DateDropdowns';
 import PawButton from '../components/PawButton';
 
+
+
 const SettingsPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -50,7 +53,6 @@ const SettingsPage: React.FC = () => {
   const [adoptionDay, setAdoptionDay] = useState<number>(0);
   const [adoptionYear, setAdoptionYear] = useState<number>(0);
 
-  const sexOptions = ['Male', 'Female'];
   const animalTypeOptions = [
     'Service Animal',
     'Therapy Animal',
@@ -232,6 +234,7 @@ const SettingsPage: React.FC = () => {
               </div>
             </div>
           </Form>
+          {id && <MonthlyPreventatives petId={parseInt(id)} />}
         </Col>
 
         <Col md={6}>
