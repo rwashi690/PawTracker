@@ -68,12 +68,39 @@ export class PetService {
   }
 
   async deletePet(petId: number): Promise<boolean> {
-    const query = `
-      DELETE FROM pets
-      WHERE id = $1
-      RETURNING id
-    `;
-    const result = await this.pool.query(query, [petId]);
-    return (result.rowCount ?? 0) > 0;
+    // Start a transaction
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Delete related task completions first
+      await client.query(
+        `DELETE FROM task_completions
+         WHERE task_id IN (SELECT id FROM daily_tasks WHERE pet_id = $1)`,
+        [petId]
+      );
+
+      // Delete related daily tasks
+      await client.query(
+        'DELETE FROM daily_tasks WHERE pet_id = $1',
+        [petId]
+      );
+
+      // Finally delete the pet
+      const query = `
+        DELETE FROM pets
+        WHERE id = $1
+        RETURNING id
+      `;
+      const result = await client.query(query, [petId]);
+
+      await client.query('COMMIT');
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

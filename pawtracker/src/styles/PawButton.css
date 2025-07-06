@@ -1,0 +1,52 @@
+.paw-button {
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  color: #000000;
+  border: none;
+  background: none;
+}
+
+.paw-button.circular {
+  border-radius: 50%;
+  padding: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paw-button.btn-primary {
+  background-color: #9999ff;
+  border-color: #8080ff;
+  color: #1a1a1a !important;
+}
+
+.paw-button.btn-primary:hover,
+.paw-button.btn-primary:active {
+  background-color: #8080ff !important;
+  border-color: #6666ff !important;
+  color: #ffffff !important;
+}
+
+.paw-button.btn-primary:focus {
+  box-shadow: 0 0 0 0.25rem rgba(204, 204, 255, 0.5) !important;
+}
+
+.paw-button.btn-danger {
+  background-color: #ff6b6b;
+  border-color: #ff5252;
+  color: #ffffff;
+}
+
+.paw-button.btn-danger:hover,
+.paw-button.btn-danger:active {
+  background-color: #ff5252 !important;
+  border-color: #ff3939 !important;
+  color: #ffffff !important;
+}
+
+.paw-button.btn-danger:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 107, 107, 0.5) !important;
+}

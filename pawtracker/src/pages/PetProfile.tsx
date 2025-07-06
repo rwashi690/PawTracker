@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Container, Button, Alert } from 'react-bootstrap';
-import { ArrowLeft, Settings } from 'lucide-react';
+import { Container, Alert } from 'react-bootstrap';
+import BackButton from '../components/BackButton';
+import SettingsButton from '../components/SettingsButton';
 import { useAuth } from '@clerk/clerk-react';
 import '../styles/PetProfile.css';
 import { fetchPet, Pet } from '../utils/fetchPets';
@@ -56,22 +57,15 @@ const PetProfile: React.FC = () => {
   return (
     <Container fluid className="pet-profile">
       <div className="profile-header">
-        <Button
-          variant="link"
-          className="back-button"
+        <BackButton
           onClick={() => navigate('/dashboard')}
-        >
-          <ArrowLeft size={24} />
-          Back
-        </Button>
+          className="back-button"
+        />
         <h1 className="pet-name">{pet.name}'s Page</h1>
-        <Button
-          variant="link"
-          className="settings-button"
+        <SettingsButton
           onClick={() => navigate(`/pet/${pet.id}/settings`)}
-        >
-          <Settings size={24} />
-        </Button>
+          className="settings-button"
+        />
       </div>
       <div className="profile-image-container">
         <img

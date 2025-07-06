@@ -1,0 +1,22 @@
+.custom-back-button.btn-link {
+  background: none;
+  border: none;
+  color: #000;
+  padding: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: -0.5rem;
+  text-decoration: none;
+}
+
+.custom-back-button.btn-link:hover,
+.custom-back-button.btn-link:active,
+.custom-back-button.btn-link:focus {
+  background-color: #8080ff !important;
+  border-color: #6666ff !important;
+  color: white !important;
+  text-decoration: none;
+  box-shadow: none;
+}

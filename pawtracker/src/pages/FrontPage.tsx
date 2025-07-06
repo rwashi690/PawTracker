@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignInButton, SignUpButton, useUser } from '@clerk/clerk-react';
-import { Container, Button } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
+import PawButton from '../components/PawButton';
 import '../styles/FrontPage.css';
 
 const FrontPage: React.FC = () => {
@@ -26,24 +27,23 @@ const FrontPage: React.FC = () => {
           {!isSignedIn ? (
             <>
               <SignInButton mode="modal">
-                <Button variant="outline-primary" size="lg">
+                <PawButton>
                   Sign In
-                </Button>
+                </PawButton>
               </SignInButton>
               <SignUpButton mode="modal">
-                <Button variant="outline-primary" size="lg">
+                <PawButton>
                   Create Account
-                </Button>
+                </PawButton>
               </SignUpButton>
             </>
           ) : (
-            <Button
-              variant="primary"
-              size="lg"
+            <PawButton
               onClick={() => navigate('/dashboard')}
+              className="mt-3"
             >
               Go to Dashboard
-            </Button>
+            </PawButton>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Modal, Form, Button, Alert } from 'react-bootstrap';
+import { Container, Modal, Form, Alert } from 'react-bootstrap';
+import PawButton from './PawButton';
 import { useAuth } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
 import '../styles/PetGrid.css';
@@ -140,9 +141,12 @@ const PetGrid: React.FC = () => {
             {pets.length === 0 ? (
               <div className="text-center w-100 py-4">
                 <p className="text-muted mb-3">No pets added yet.</p>
-                <Button variant="primary" onClick={handleAddPet}>
-                  Add Your First Pet
-                </Button>
+                <PawButton
+                  onClick={handleAddPet}
+                  className="btn-primary"
+                >
+                  Add Pet
+                </PawButton>
               </div>
             ) : (
               <>
@@ -188,21 +192,19 @@ const PetGrid: React.FC = () => {
               />
             </Form.Group>
             <div className="modal-buttons">
-              <Button
-                variant="secondary"
+              <PawButton
                 onClick={() => setShowModal(false)}
                 className="w-100"
               >
                 Cancel
-              </Button>
-              <Button
-                variant="primary"
+              </PawButton>
+              <PawButton
                 type="submit"
                 disabled={isLoading}
                 className="w-100"
               >
                 {isLoading ? 'Adding...' : 'Add Pet'}
-              </Button>
+              </PawButton>
             </div>
           </Form>
         </Modal.Body>

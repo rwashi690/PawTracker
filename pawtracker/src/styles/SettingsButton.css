@@ -1,0 +1,22 @@
+.custom-settings-button.btn-link {
+  background: none;
+  border: none;
+  color: #000;
+  padding: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -0.5rem;
+  text-decoration: none;
+}
+
+.custom-settings-button.btn-link:hover,
+.custom-settings-button.btn-link:active,
+.custom-settings-button.btn-link:focus {
+  background-color: #8080ff !important;
+  border-color: #6666ff !important;
+  color: white !important;
+  text-decoration: none;
+  box-shadow: none;
+}

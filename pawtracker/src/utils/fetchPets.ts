@@ -42,6 +42,10 @@ export interface Pet {
   sex?: string;
   species?: string;
   animal_type?: string;
+  birthdate?: string;
+  is_adopted?: boolean;
+  adoption_date?: string;
+  is_working_dog?: boolean;
 }
 
 export interface DailyTask {
