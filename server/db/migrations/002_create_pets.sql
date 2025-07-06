@@ -1,14 +1,19 @@
 -- Create pets table
 CREATE TABLE IF NOT EXISTS pets (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
+  breed VARCHAR(100),
+  birthdate DATE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   image_url TEXT NOT NULL,
-  sex VARCHAR(10),
-  species VARCHAR(30),
-  animal_type VARCHAR(30),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  is_adopted BOOLEAN DEFAULT FALSE,
+  adoption_date DATE,
+  is_working_dog BOOLEAN DEFAULT FALSE,
+  animal_type VARCHAR(50),
+  sex VARCHAR(10),
+  species VARCHAR(50),
   CONSTRAINT fk_user
     FOREIGN KEY(user_id)
     REFERENCES users(id)
