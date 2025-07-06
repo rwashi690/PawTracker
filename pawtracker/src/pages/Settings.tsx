@@ -10,7 +10,7 @@ import {
   Toast,
 } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import BackButton from '../components/BackButton';
 import { useAuth } from '@clerk/clerk-react';
 import DropdownComponent from '../components/DropdownComponent';
 import BreedDropdown from '../components/BreedDropdown';
@@ -184,14 +184,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <Button
-          variant="link"
-          className="back-button"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft size={24} />
-          Back
-        </Button>
+        <BackButton onClick={() => navigate(-1)} />
         <div className="d-flex align-items-center gap-2">
           <img
             src={`http://localhost:3001${pet.image_url}`}
