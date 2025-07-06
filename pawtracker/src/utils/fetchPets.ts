@@ -126,8 +126,13 @@ export const markTaskComplete = async (
   date: string,
   getToken: GetTokenFn
 ): Promise<TaskCompletion> => {
-  return makeAuthenticatedRequest(`/tasks/${taskId}/complete`, getToken, {
-    method: 'POST',
-    body: JSON.stringify({ completion_date: date }),
-  });
+  try {
+    return await makeAuthenticatedRequest(`/tasks/${taskId}/complete`, getToken, {
+      method: 'POST',
+      body: JSON.stringify({ completion_date: date }),
+    });
+  } catch (error: any) {
+    console.error('Error in markTaskComplete:', error);
+    throw new Error(error.message || 'Failed to mark task as complete');
+  }
 };
