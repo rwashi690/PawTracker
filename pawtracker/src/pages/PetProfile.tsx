@@ -27,7 +27,11 @@ const PetProfile: React.FC = () => {
   const [pet, setPet] = React.useState<Pet | null>(null);
   const [tasks, setTasks] = React.useState<DailyTask[]>([]);
   const [completedTasks, setCompletedTasks] = React.useState<TaskCompletion[]>([]);
-  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = React.useState(() => {
+    const now = new Date();
+    // Keep current month and year
+    return now;
+  });
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -39,17 +43,18 @@ const PetProfile: React.FC = () => {
         setError(null);
         const [petData, tasksData] = await Promise.all([
           fetchPet(id, getToken),
-          fetchDailyTasks(id, getToken),
+          fetchDailyTasks(id, getToken, selectedDate)
         ]);
         setPet(petData);
         setTasks(tasksData);
       } catch (err: any) {
+        console.error('Error fetching pet data:', err);
         setError(err.message || 'Failed to load data');
       } finally {
         setLoading(false);
       }
     })();
-  }, [id, getToken]);
+  }, [id, getToken, selectedDate]);
 
   React.useEffect(() => {
     const fetchCompletions = async () => {
@@ -70,7 +75,7 @@ const PetProfile: React.FC = () => {
                 credentials: 'include',
               }
             );
-            if (resp.status === 404) return null;
+            // No need to check for 404 since backend always returns 200 with null for no completions
             if (!resp.ok) throw new Error(resp.statusText);
             return resp.json();
           })
@@ -155,14 +160,24 @@ const PetProfile: React.FC = () => {
               ) : (
                 tasks.map(task => {
                   const done = completedTasks.some(c => c.task_id === task.id);
+                  const isPreventative = task.task_type === 'preventative';
                   return (
                     <div
                       key={task.id}
                       className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded"
+                      style={{
+                        backgroundColor: isPreventative ? '#fff3cd' : 'transparent',
+                        borderColor: isPreventative ? '#ffeeba' : undefined
+                      }}
                     >
-                      <span className={done ? 'text-muted text-decoration-line-through' : ''}>
-                        {task.task_name}
-                      </span>
+                      <div>
+                        <span className={done ? 'text-muted text-decoration-line-through' : ''}>
+                          {task.task_name}
+                        </span>
+                        {isPreventative && (
+                          <span className="ms-2 badge bg-warning text-dark">Preventative</span>
+                        )}
+                      </div>
                       <div style={{ flexShrink: 0 }}>
                         <CircularCheckButton
                           onClick={() => handleComplete(task)}
@@ -187,7 +202,13 @@ const PetProfile: React.FC = () => {
             <Card.Body>
               <Calendar
                 onChange={(value) => {
-                  if (value instanceof Date) setSelectedDate(value);
+                  if (value instanceof Date) {
+                    console.log('Calendar selected date:', value);
+                    console.log('Calendar selected date (ISO):', value.toISOString());
+                    console.log('Calendar selected date (local):', value.toLocaleString());
+                    console.log('Calendar selected day:', value.getDate());
+                    setSelectedDate(value);
+                  }
                 }}
                 value={selectedDate}
                 className="w-100"

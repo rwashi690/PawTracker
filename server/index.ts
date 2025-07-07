@@ -41,7 +41,7 @@ app.get('/api/test', (req: Request, res: Response) => {
 
 // Routes
 app.use('/api/pets', petsRouter);
-app.use('/api', tasksRouter); // Adding tasks routes
+app.use('/api/tasks', tasksRouter); // Adding tasks routes
 app.use('/api/preventatives', preventativesRouter); // Adding preventatives routes
 
 // Health check endpoint

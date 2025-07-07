@@ -50,6 +50,7 @@ export interface Pet {
 }
 
 export interface DailyTask {
+  task_type: 'daily' | 'preventative';
   id: number;
   pet_id: number;
   task_name: string;
@@ -94,11 +95,21 @@ export const deletePet = async (
   });
 };
 
-export const fetchDailyTasks = async (
+export async function fetchDailyTasks(
   petId: string,
-  getToken: GetTokenFn
-): Promise<DailyTask[]> => {
-  return makeAuthenticatedRequest(`/pets/${petId}/tasks`, getToken);
+  getToken: GetTokenFn,
+  date?: Date
+): Promise<DailyTask[]> {
+  console.log('🎯 fetchDailyTasks called with:', {
+    petId,
+    date: date?.toLocaleString(),
+    dateISO: date?.toISOString()
+  });
+  const dateParam = date ? `?date=${date.toISOString()}` : '';
+  const endpoint = `/tasks/${petId}${dateParam}`;
+  console.log('📡 Making API request to:', `${BASE_URL}${endpoint}`);
+  console.log('🔑 Using auth token:', await getToken());
+  return makeAuthenticatedRequest(endpoint, getToken);
 };
 
 export const createDailyTask = async (
