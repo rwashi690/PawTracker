@@ -32,7 +32,7 @@ const PetGrid: React.FC = () => {
         setError('Not authenticated. Please sign in.');
         return;
       }
-      const res = await fetch('http://localhost:3001/api/pets', {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/pets`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
@@ -67,7 +67,7 @@ const PetGrid: React.FC = () => {
       form.append('name', newPetName);
       form.append('image', selectedImage);
 
-      const res = await fetch('http://localhost:3001/api/pets', {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/pets`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form,
@@ -113,7 +113,7 @@ const PetGrid: React.FC = () => {
             <Col key={pet.id} xs={12} sm="auto">
               <PetCircle
                 id={pet.id}
-                imageUrl={`http://localhost:3001${pet.image_url}`}
+                imageUrl={`${process.env.REACT_APP_API_URL}${pet.image_url}`}
                 name={pet.name}
               />
             </Col>

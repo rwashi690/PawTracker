@@ -1,14 +1,24 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+
+const uploadsDir = path.join(process.cwd(), 'uploads/pets');
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/pets'); // Make sure this directory exists
+    console.log('Upload destination:', uploadsDir);
+    // Ensure directory exists
+    if (!fs.existsSync(uploadsDir)) {
+      console.log('Creating uploads directory:', uploadsDir);
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+    console.log('Generated filename:', uniqueFilename);
     cb(null, uniqueFilename);
   },
 });

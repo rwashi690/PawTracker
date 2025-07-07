@@ -1,10 +1,10 @@
 import express, { type Request, type Response } from 'express';
-import { type CreatePetDTO } from '../models/Pet';
-import { PetService } from '../services/petService';
-import { upload } from '../middleware/uploadMiddleware';
-import { pool } from '../db/db';
-import { getUserIdFromClerkId } from '../utils/auth';
-import { ensureAuthenticated } from '../middleware/auth';
+import { type CreatePetDTO } from '../models/Pet.js';
+import { PetService } from '../services/petService.js';
+import { upload } from '../middleware/uploadMiddleware.js';
+import { pool } from '../db/db.js';
+import { getUserIdFromClerkId } from '../utils/auth.js';
+import { ensureAuthenticated } from '../middleware/auth.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,7 +27,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       if (isNaN(petId)) {
         res.status(400).json({ error: 'Invalid pet ID' });
         return;
@@ -120,6 +120,7 @@ router.post(
       }
 
       const image_url = req.file ? `/uploads/pets/${req.file.filename}` : null;
+      console.log('Setting image URL:', image_url, 'for file:', req.file);
 
       console.log('Creating pet:', {
         name,
@@ -155,7 +156,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       const pet = await petService.getPetById(petId);
 
       if (!pet) {
@@ -182,7 +183,7 @@ router.put(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       const pet = await petService.getPetById(petId);
 
       if (!pet) {
@@ -211,7 +212,7 @@ router.put(
   upload.single('image'),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       const pet = await petService.getPetById(petId);
 
       if (!pet) {
@@ -251,7 +252,7 @@ router.delete(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       const pet = await petService.getPetById(petId);
 
       if (!pet) {
@@ -292,7 +293,7 @@ router.get(
       internalId: req.auth?.internalId
     });
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       console.log('Getting tasks for pet:', { petId, auth: req.auth });
       const pet = await petService.getPetById(petId);
       console.log('Found pet:', pet);
@@ -329,7 +330,7 @@ router.post(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.id);
+      const petId = parseInt(req.params.id || '0');
       const pet = await petService.getPetById(petId);
 
       if (!pet) {

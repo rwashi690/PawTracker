@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { ClerkExpressRequireAuth, clerkClient } from '@clerk/clerk-sdk-node';
-import { pool } from '../db/db';
+import { pool } from '../db/db.js';
 
 // Ensure Clerk environment variables are set
 if (!process.env.CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {

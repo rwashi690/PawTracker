@@ -1,0 +1,33 @@
+# fly.toml app configuration file generated for pawtracker-white-shadow-1180 on 2025-07-06T19:59:03-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "pawtracker-white-shadow-1180"
+primary_region = "lax"
+
+[build]
+  builder = "heroku/builder:22"
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[mounts]]
+  source = "uploads"
+  destination = "/app/uploads"
+
+[processes]
+  app = "npm start"
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

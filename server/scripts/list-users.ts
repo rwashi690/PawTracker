@@ -1,4 +1,4 @@
-import { query } from '../db';
+import { query } from '../db/index.js';
 
 const listUsers = async () => {
   try {

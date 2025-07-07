@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import MonthlyPreventatives from '../components/MonthlyPreventatives';
 import {
   Container,
@@ -189,7 +190,7 @@ const SettingsPage: React.FC = () => {
         <BackButton onClick={() => navigate(-1)} />
         <div className="d-flex align-items-center gap-2">
           <img
-            src={`http://localhost:3001${pet.image_url}`}
+            src={`${API_URL}${pet.image_url}`}
             alt={pet.name}
             className="rounded-circle"
             style={{ width: '40px', height: '40px', objectFit: 'cover' }}

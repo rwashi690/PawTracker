@@ -1,7 +1,7 @@
-import express, { Request, Response } from 'express';
-import { pool as db } from '../db/db';
-import { ensureAuthenticated } from '../middleware/auth';
-import { ensureAuthenticated as authenticateToken } from '../middleware/auth';
+import express, { type Request, type Response } from 'express';
+import { pool as db } from '../db/db.js';
+import { ensureAuthenticated } from '../middleware/auth.js';
+import { ensureAuthenticated as authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -118,7 +118,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.petId);
+      const petId = parseInt(req.params.petId || '0');
 
       // First verify the pet belongs to the user
       const {

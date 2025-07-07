@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { API_URL } from '../config';
 import { Container, Row, Col, Alert, Button, Card } from 'react-bootstrap';
 import Calendar from 'react-calendar';
 import { useAuth } from '@clerk/clerk-react';
@@ -66,7 +67,7 @@ const PetProfile: React.FC = () => {
         const completions = await Promise.all(
           tasks.map(async task => {
             const resp = await fetch(
-              `http://localhost:3001/api/tasks/${task.id}/completions/${dateStr}`,
+              `${API_URL}/api/tasks/${task.id}/completions/${dateStr}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -130,7 +131,7 @@ const PetProfile: React.FC = () => {
       {/* Centered Pet Image */}
       <div className="text-center mb-4">
         <img
-          src={`http://localhost:3001${pet.image_url}`}
+          src={`${API_URL}${pet.image_url}`}
           alt={pet.name}
           className="rounded-circle"
           style={{

@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import type { Pet, CreatePetDTO } from '../models/Pet';
+import type { Pet, CreatePetDTO } from '../models/Pet.js';
 
 export class PetService {
   private pool: Pool;

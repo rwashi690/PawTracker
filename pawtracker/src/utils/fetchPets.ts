@@ -1,7 +1,7 @@
 // Using a more generic type since we only need the getToken function
 type GetTokenFn = () => Promise<string | null>;
 
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = `${process.env.REACT_APP_API_URL}/api`;
 
 const makeAuthenticatedRequest = async (
   endpoint: string,

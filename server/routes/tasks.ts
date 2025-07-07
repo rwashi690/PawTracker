@@ -1,6 +1,6 @@
-import { Router, Request, Response } from 'express';
-import { ensureAuthenticated } from '../middleware/auth';
-import { pool as db } from '../db/db';
+import express, { type Request, type Response, Router } from 'express';
+import { ensureAuthenticated } from '../middleware/auth.js';
+import { pool as db } from '../db/db.js';
 
 const router = Router();
 
@@ -41,7 +41,7 @@ router.get(
     });
     console.log('Selected date:', selectedDate);
     try {
-      const petId = parseInt(req.params.petId);
+      const petId = parseInt(req.params.petId || '0');
 
       // First verify the pet belongs to the user
       const {
@@ -127,7 +127,7 @@ router.post(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const petId = parseInt(req.params.petId);
+      const petId = parseInt(req.params.petId || '0');
       const { task_name } = req.body;
 
       if (!task_name) {
@@ -173,7 +173,7 @@ router.delete(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId);
+      const taskId = parseInt(req.params.taskId || '0');
 
       // First verify the task's pet belongs to the user
       const {
@@ -208,7 +208,7 @@ router.post(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId);
+      const taskId = parseInt(req.params.taskId || '0');
       const { completion_date } = req.body;
 
       if (!completion_date) {
@@ -257,7 +257,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId);
+      const taskId = parseInt(req.params.taskId || '0');
       const date = req.params.date;
 
       // First verify the task's pet belongs to the user
@@ -298,7 +298,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId);
+      const taskId = parseInt(req.params.taskId || '0');
       const date = req.params.date;
 
       // First verify the task belongs to the user
@@ -348,7 +348,7 @@ router.post(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId);
+      const taskId = parseInt(req.params.taskId || '0');
       const { completion_date } = req.body;
 
       // First verify the task belongs to the user

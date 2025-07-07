@@ -28,7 +28,15 @@ const PetCircle: React.FC<PetCircleProps> = ({
         {isAddButton ? (
           <i className="bi bi-plus-lg"></i>
         ) : (
-          imageUrl && <Image src={imageUrl} alt={name} />
+          imageUrl && (
+            <>
+              {console.log('Loading image from URL:', imageUrl)}
+              <Image src={imageUrl} alt={name} onError={(e) => {
+                console.error('Image failed to load:', imageUrl);
+                console.error('Error event:', e);
+              }} />
+            </>
+          )
         )}
       </div>
       {name && <div className="pet-name">{name}</div>}

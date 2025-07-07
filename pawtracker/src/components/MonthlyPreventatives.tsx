@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../config';
 import { Preventative } from '../types/preventative';
 import { Button, Form, ListGroup, Alert } from 'react-bootstrap';
 import { useAuth } from '@clerk/clerk-react';
@@ -39,7 +40,7 @@ const MonthlyPreventatives: React.FC<MonthlyPreventativesProps> = ({ petId }) =>
   const fetchPreventatives = useCallback(async () => {
     try {
       const data = await makeAuthenticatedRequest(
-        `http://localhost:3001/api/preventatives/pet/${petId}`
+        `${API_URL}/api/preventatives/pet/${petId}`
       );
       setPreventatives(data);
     } catch {
@@ -61,7 +62,7 @@ const MonthlyPreventatives: React.FC<MonthlyPreventativesProps> = ({ petId }) =>
     }
   
     try {
-      await makeAuthenticatedRequest('http://localhost:3001/api/preventatives', {
+      await makeAuthenticatedRequest(`${API_URL}/api/preventatives`, {
         method: 'POST',
         body: JSON.stringify({
           pet_id: petId,
@@ -80,7 +81,7 @@ const MonthlyPreventatives: React.FC<MonthlyPreventativesProps> = ({ petId }) =>
     if (!window.confirm('Are you sure you want to delete this preventative?')) return;
     try {
       await makeAuthenticatedRequest(
-        `http://localhost:3001/api/preventatives/${id}`,
+        `${API_URL}/api/preventatives/${id}`,
         { method: 'DELETE' }
       );
       fetchPreventatives();

@@ -3,16 +3,23 @@ import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { createUser } from './services/users';
-import { pool } from './db/db';
-import petsRouter from './routes/pets';
-import tasksRouter from './routes/tasks';
-import preventativesRouter from './routes/preventatives';
-import { ensureAuthenticated } from './middleware/auth';
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads/pets');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+import { createUser } from './services/users.js';
+import { pool } from './db/db.js';
+import petsRouter from './routes/pets.js';
+import tasksRouter from './routes/tasks.js';
+import preventativesRouter from './routes/preventatives.js';
+import { ensureAuthenticated } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -22,7 +29,12 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://pawtracker.fly.dev',
+      'https://pawtracker25.netlify.app',
+      process.env.FRONTEND_URL, // Allow configurable frontend URL
+    ].filter((url): url is string => Boolean(url)),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -36,8 +48,30 @@ app.use(
 );
 app.use(express.json());
 
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok' });
+});
+
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadsPath = path.join(process.cwd(), 'uploads');
+console.log('Serving uploads from:', uploadsPath);
+app.use('/uploads', express.static(uploadsPath, {
+  setHeaders: (res, filePath) => {
+    console.log('Serving file:', filePath);
+    res.setHeader('Content-Type', 'image/jpeg');
+  }
+}));
+
+// Log middleware to debug image requests
+app.use('/uploads', (req, res, next) => {
+  console.log('Image request:', {
+    url: req.url,
+    method: req.method,
+    headers: req.headers
+  });
+  next();
+});
 
 // Test route
 app.get('/api/test', (req: Request, res: Response) => {

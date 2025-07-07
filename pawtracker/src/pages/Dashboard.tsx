@@ -12,7 +12,7 @@ const createUserInDatabase = async (
     const token = await getToken();
     if (!token) throw new Error('Failed to get authentication token');
 
-    const response = await fetch('http://localhost:3001/api/users', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ const createUserInDatabase = async (
 // const createUserInDatabase = async (user: any) => {
 //   try {
 //     const token = await user.getToken();
-//     const response = await fetch('http://localhost:3001/api/users', {
+//     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users`, {
 //       method: 'POST',
 //       headers: {
 //         'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-import { pool } from '../db/db';
+import { pool } from '../db/db.js';
 
 export async function getUserIdFromClerkId(clerkId: string): Promise<number> {
   const query = 'SELECT id FROM users WHERE clerk_id = $1';
