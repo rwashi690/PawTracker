@@ -1,1 +1,1 @@
-web: cd server && bun start
+web: cd server && npm start

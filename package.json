@@ -11,11 +11,10 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "start": "cd server && bun start",
+    "start": "cd server && npm start",
     "heroku-postbuild": "cd pawtracker && npm install && npm run build && cd ../server && npm install"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "bun": ">=1.0.0"
+    "node": ">=18.0.0"
   }
 }
