@@ -1,1 +1,2 @@
-web: bun start
+web: cd server && bun start
+worker: cd pawtracker && bun start

@@ -37,3 +37,23 @@
 .pet-name {
   margin-top: 0.5rem;
 }
+
+/* Adjust for small screens */
+@media (max-width: 576px) {
+  .pet-name {
+    display: none;
+  }
+
+  .pet-circle {
+    width: 100px;
+    height: 100px;
+    margin: 10px auto;
+  }
+
+  /* Center the entire pet circle container */
+  div:has(> .pet-circle) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}

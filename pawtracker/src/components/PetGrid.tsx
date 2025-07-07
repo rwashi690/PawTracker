@@ -1,5 +1,6 @@
+// src/components/PetGrid.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Modal, Form, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
 import { useAuth } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
@@ -31,85 +32,56 @@ const PetGrid: React.FC = () => {
         setError('Not authenticated. Please sign in.');
         return;
       }
-      const response = await fetch('http://localhost:3001/api/pets', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch('http://localhost:3001/api/pets', {
+        headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch pets');
-      }
-      const data = await response.json();
-      setPets(data);
-    } catch (error) {
-      console.error('Error fetching pets:', error);
-      setError('Failed to load pets. Please try refreshing the page.');
+      if (!res.ok) throw new Error('Failed to fetch pets');
+      setPets(await res.json());
+    } catch (err) {
+      console.error('Error fetching pets:', err);
+      setError('Failed to load pets. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, setError, setPets]);
+  }, [getToken]);
 
-  useEffect(() => {
-    fetchPets();
-  }, [fetchPets]);
+  useEffect(() => { fetchPets(); }, [fetchPets]);
 
-  const handleAddPet = () => {
-    setShowModal(true);
-  };
-
+  const handleAddPet = () => setShowModal(true);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]);
-    }
+    if (e.target.files?.[0]) setSelectedImage(e.target.files[0]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedImage || !newPetName) return;
+    if (!newPetName || !selectedImage) return;
 
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('image', selectedImage);
-    formData.append('name', newPetName);
-
     try {
       const token = await getToken();
-      if (!token) {
-        setError('Not authenticated. Please sign in.');
-        return;
-      }
+      if (!token) throw new Error('Not authenticated');
+      const form = new FormData();
+      form.append('name', newPetName);
+      form.append('image', selectedImage);
 
-      // No Content-Type header needed for FormData, browser will set it automatically
-      const response = await fetch('http://localhost:3001/api/pets', {
+      const res = await fetch('http://localhost:3001/api/pets', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
         credentials: 'include',
       });
+      if (!res.ok) throw new Error('Failed to add pet');
 
-      if (response.status === 404) {
-        throw new Error(
-          'User not found. Please make sure you are properly signed in.'
-        );
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to add pet');
-      }
-
-      const newPet = await response.json();
-      setPets([...pets, newPet]);
+      const addedPet = await res.json();
+      setPets((ps) => [...ps, addedPet]);
       setShowModal(false);
       setNewPetName('');
       setSelectedImage(null);
-    } catch (error) {
-      console.error('Error adding pet:', error);
+    } catch (err) {
+      console.error('Error adding pet:', err);
       setError('Failed to add pet. Please try again.');
     } finally {
       setIsLoading(false);
@@ -117,55 +89,42 @@ const PetGrid: React.FC = () => {
   };
 
   return (
-    <Container>
-      <div className="pet-grid">
-        {error && (
-          <Alert
-            variant="danger"
-            className="w-100"
-            onClose={() => setError(null)}
-            dismissible
-          >
-            {error}
-          </Alert>
-        )}
+    <Container className="py-4">
+      {error && (
+        <Alert variant="danger" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
 
-        {isLoading ? (
-          <div className="text-center w-100 py-4">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading pets...</span>
-            </div>
-          </div>
-        ) : (
-          <>
-            {pets.length === 0 ? (
-              <div className="text-center w-100 py-4">
-                <p className="text-muted mb-3">No pets added yet.</p>
-                <PawButton
-                  onClick={handleAddPet}
-                  className="btn-primary"
-                >
-                  Add Pet
-                </PawButton>
-              </div>
-            ) : (
-              <>
-                {pets.map((pet) => (
-                  <PetCircle
-                    key={pet.id}
-                    id={pet.id}
-                    imageUrl={`http://localhost:3001${pet.image_url}`}
-                    name={pet.name}
-                  />
-                ))}
-                <PetCircle isAddButton onClick={handleAddPet} />
-              </>
-            )}
-          </>
-        )}
-      </div>
+      {isLoading && pets.length === 0 ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" role="status" />
+        </div>
+      ) : pets.length === 0 ? (
+        <div className="text-center py-4">
+          <p className="text-muted mb-3">No pets added yet.</p>
+          <PawButton onClick={handleAddPet} className="btn-primary">
+            Add Pet
+          </PawButton>
+        </div>
+      ) : (
+        <Row className="g-3">
+          {pets.map((pet) => (
+            <Col key={pet.id} xs={12} sm="auto">
+              <PetCircle
+                id={pet.id}
+                imageUrl={`http://localhost:3001${pet.image_url}`}
+                name={pet.name}
+              />
+            </Col>
+          ))}
+          <Col xs={12} sm="auto">
+            <PetCircle isAddButton onClick={handleAddPet} />
+          </Col>
+        </Row>
+      )}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add New Pet</Modal.Title>
         </Modal.Header>
@@ -176,12 +135,11 @@ const PetGrid: React.FC = () => {
               <Form.Control
                 type="text"
                 value={newPetName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewPetName(e.target.value)
-                }
+                onChange={(e) => setNewPetName(e.target.value)}
                 required
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Pet Photo</Form.Label>
               <Form.Control
@@ -191,19 +149,13 @@ const PetGrid: React.FC = () => {
                 required
               />
             </Form.Group>
-            <div className="modal-buttons">
-              <PawButton
-                onClick={() => setShowModal(false)}
-                className="w-100"
-              >
+
+            <div className="d-flex gap-2">
+              <PawButton onClick={() => setShowModal(false)} className="flex-fill">
                 Cancel
               </PawButton>
-              <PawButton
-                type="submit"
-                disabled={isLoading}
-                className="w-100"
-              >
-                {isLoading ? 'Adding...' : 'Add Pet'}
+              <PawButton type="submit" disabled={isLoading} className="flex-fill">
+                {isLoading ? 'Adding…' : 'Add Pet'}
               </PawButton>
             </div>
           </Form>
