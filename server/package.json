@@ -1,14 +1,15 @@
 {
   "name": "server",
-  "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun run index.ts",
-    "dev": "bun --watch run index.ts"
+    "start": "node --experimental-specifier-resolution=node --loader ts-node/esm index.ts",
+    "dev": "nodemon --experimental-specifier-resolution=node --exec node --loader ts-node/esm index.ts",
+    "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "bun-types": "latest"
+    "ts-node": "^10.9.2",
+    "nodemon": "^3.0.3",
+    "typescript": "^5.3.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"

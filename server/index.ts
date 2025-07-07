@@ -1,7 +1,12 @@
-import express, { type Request, type Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { createUser } from './services/users';
 import { pool } from './db/db';
 import petsRouter from './routes/pets';
@@ -81,7 +86,38 @@ app.post('/api/users', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// Error handling middleware
+app.use((err: Error, req: Request, res: Response, next: any) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
+
+// Handle termination signals
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM. Performing graceful shutdown...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Performing graceful shutdown...');
+  process.exit(0);
+});
+
 // Start server
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+});
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
 });
