@@ -1,7 +1,9 @@
+import { API_URL } from '../config';
+
 // Using a more generic type since we only need the getToken function
 type GetTokenFn = () => Promise<string | null>;
 
-const BASE_URL = `${process.env.REACT_APP_API_URL}/api`;
+const BASE_URL = `${API_URL}/api`;
 
 const makeAuthenticatedRequest = async (
   endpoint: string,
@@ -106,7 +108,7 @@ export async function fetchDailyTasks(
     dateISO: date?.toISOString()
   });
   const dateParam = date ? `?date=${date.toISOString()}` : '';
-  const endpoint = `/tasks/${petId}${dateParam}`;
+  const endpoint = `/tasks/pet/${petId}${dateParam}`;
   console.log('📡 Making API request to:', `${BASE_URL}${endpoint}`);
   console.log('🔑 Using auth token:', await getToken());
   return makeAuthenticatedRequest(endpoint, getToken);
@@ -117,7 +119,7 @@ export const createDailyTask = async (
   taskName: string,
   getToken: GetTokenFn
 ): Promise<DailyTask> => {
-  return makeAuthenticatedRequest(`/pets/${petId}/tasks`, getToken, {
+  return makeAuthenticatedRequest(`/tasks/pet/${petId}/tasks`, getToken, {
     method: 'POST',
     body: JSON.stringify({ task_name: taskName }),
   });

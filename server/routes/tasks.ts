@@ -6,7 +6,7 @@ const router = Router();
 
 // Get all tasks for a pet
 router.get(
-  '/:petId',
+  '/pet/:petId',
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     console.log('🎯 ROUTE HIT: GET /pets/:petId/tasks');
@@ -123,7 +123,7 @@ router.get(
 
 // Create a new task
 router.post(
-  '/pets/:petId/tasks',
+  '/pet/:petId/tasks',
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -145,7 +145,7 @@ router.post(
         return;
       }
 
-      if (pet.user_id !== req.auth?.userId) {
+      if (pet.user_id !== req.auth?.internalId) {
         res
           .status(403)
           .json({ error: 'Not authorized to add tasks for this pet' });
@@ -169,7 +169,7 @@ router.post(
 
 // Delete a task
 router.delete(
-  '/tasks/:taskId',
+  '/:taskId',
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -387,6 +387,43 @@ router.post(
     } catch (error) {
       console.error('Error marking task complete:', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// Delete a task
+router.delete(
+  '/:taskId',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const taskId = parseInt(req.params.taskId || '0');
+
+      // First verify the task belongs to the user's pet
+      const {
+        rows: [task],
+      } = await db.query(
+        'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+        [taskId]
+      );
+
+      if (!task) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+
+      if (task.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to delete this task' });
+        return;
+      }
+
+      // Delete the task
+      await db.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+
+      res.status(200).json({ message: 'Task deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      res.status(500).json({ error: 'Failed to delete task' });
     }
   }
 );
