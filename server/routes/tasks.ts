@@ -108,8 +108,10 @@ router.get(
         matches: allPreventatives.filter(p => p.due_day === selectedDay)
       });
 
-      // Combine daily tasks and preventatives
-      const allTasks = [...tasks, ...preventatives];
+      // Only include preventatives if a date was provided in the query
+      const allTasks = req.query.date
+        ? [...tasks, ...preventatives]
+        : tasks;
 
       res.json(allTasks);
     } catch (error) {
