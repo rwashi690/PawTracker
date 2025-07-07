@@ -2,19 +2,20 @@
   "name": "server",
   "type": "module",
   "scripts": {
-    "start": "node --experimental-specifier-resolution=node --loader ts-node/esm index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
     "dev": "nodemon --experimental-specifier-resolution=node --exec node --loader ts-node/esm index.ts",
     "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "nodemon": "^3.0.3",
-    "typescript": "^5.3.3"
+    "nodemon": "^3.0.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
     "@clerk/clerk-sdk-node": "^5.1.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
