@@ -176,12 +176,24 @@ router.delete(
       const taskId = parseInt(req.params.taskId || '0');
 
       // First verify the task's pet belongs to the user
-      const {
-        rows: [task],
-      } = await db.query(
-        'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
-        [taskId]
-      );
+      // Check if it's a daily task or preventative task based on ID
+      let task;
+      
+      if (taskId >= 90001) {
+        // This is a preventative task
+        const { rows } = await db.query(
+          'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        // This is a daily task
+        const { rows } = await db.query(
+          'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
 
       if (!task) {
         res.status(404).json({ error: 'Task not found' });
@@ -217,12 +229,24 @@ router.post(
       }
 
       // First verify the task's pet belongs to the user
-      const {
-        rows: [task],
-      } = await db.query(
-        'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
-        [taskId]
-      );
+      // Check if it's a daily task or preventative task based on ID
+      let task;
+      
+      if (taskId >= 90001) {
+        // This is a preventative task
+        const { rows } = await db.query(
+          'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        // This is a daily task
+        const { rows } = await db.query(
+          'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
 
       if (!task) {
         res.status(404).json({ error: 'Task not found' });
@@ -236,6 +260,21 @@ router.post(
         return;
       }
 
+      // Make sure the task exists in the unified tasks table
+      const { rows: tasksCheck } = await db.query(
+        'SELECT id FROM tasks WHERE id = $1',
+        [taskId]
+      );
+      
+      if (tasksCheck.length === 0) {
+        // Task doesn't exist in the tasks table, add it
+        const taskType = taskId >= 90001 ? 'preventative' : 'daily';
+        await db.query(
+          'INSERT INTO tasks (id, task_type) VALUES ($1, $2)',
+          [taskId, taskType]
+        );
+      }
+      
       const {
         rows: [completion],
       } = await db.query(
@@ -261,12 +300,24 @@ router.get(
       const date = req.params.date;
 
       // First verify the task's pet belongs to the user
-      const {
-        rows: [task],
-      } = await db.query(
-        'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
-        [taskId]
-      );
+      // Check if it's a daily task or preventative task based on ID
+      let task;
+      
+      if (taskId >= 90001) {
+        // This is a preventative task
+        const { rows } = await db.query(
+          'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        // This is a daily task
+        const { rows } = await db.query(
+          'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
 
       if (!task) {
         res.status(404).json({ error: 'Task not found' });
