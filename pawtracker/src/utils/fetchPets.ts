@@ -67,6 +67,20 @@ export interface TaskCompletion {
   completed_at: string;
 }
 
+export interface PreventativeCompletion {
+  id: number;
+  preventative_id: number;
+  completion_date: string;
+  completed_at: string;
+}
+
+export interface Task {
+  id: number;
+  task_name: string;
+  task_type: 'daily' | 'preventative';
+  due_day?: number;
+}
+
 export const fetchPet = async (
   id: string | undefined,
   getToken: GetTokenFn
@@ -149,3 +163,31 @@ export const markTaskComplete = async (
     throw new Error(error.message || 'Failed to mark task as complete');
   }
 };
+export async function fetchMonthlyPreventatives(petId: string, getToken: () => Promise<string>) {
+  const token = await getToken();
+  const resp = await fetch(`${BASE_URL}/pets/${petId}/preventatives`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return resp.json(); // array of { id, name, notes, action_date }
+}
+
+export async function markPreventativeComplete(prevId: number, date: string, getToken: () => Promise<string>): Promise<PreventativeCompletion> {
+  const token = await getToken();
+  const resp = await fetch(`${BASE_URL}/preventatives/${prevId}/complete`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ completion_date: date })
+  });
+  return resp.json(); // the completion record or null
+}
+
+export async function fetchPreventativeCompletion(prevId: number, date: string, getToken: () => Promise<string>) {
+  const token = await getToken();
+  const resp = await fetch(`${BASE_URL}/preventatives/${prevId}/completions/${date}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return resp.json(); // completion record or null
+}

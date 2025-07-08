@@ -113,6 +113,80 @@ router.delete(
 );
 
 // Get preventatives for a pet
+// Mark a preventative complete
+router.post(
+  '/:preventativeId/complete',
+  ensureAuthenticated,
+  async (req: Request<{ preventativeId: string }>, res: Response): Promise<void> => {
+    try {
+      const { preventativeId } = req.params;
+      const { completion_date } = req.body;
+      const internalId = req.auth?.internalId;
+
+      // Verify user owns this preventative
+      const preventative = await db.query(
+        'SELECT p.* FROM preventatives p JOIN pets ON p.pet_id = pets.id WHERE p.id = $1 AND pets.user_id = $2',
+        [preventativeId, internalId]
+      );
+
+      if (preventative.rows.length === 0) {
+        res.status(404).json({ error: 'Preventative not found or unauthorized' });
+        return;
+      }
+
+      // Insert completion
+      const result = await db.query(
+        'INSERT INTO preventative_completions (preventative_id, completion_date) VALUES ($1, $2) RETURNING *',
+        [preventativeId, completion_date]
+      );
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Error marking preventative complete:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// Get preventative completion status
+router.get(
+  '/:preventativeId/completions/:date',
+  ensureAuthenticated,
+  async (req: Request<{ preventativeId: string; date: string }>, res: Response): Promise<void> => {
+    try {
+      const { preventativeId, date } = req.params;
+      const internalId = req.auth?.internalId;
+
+      // Verify user owns this preventative
+      const preventative = await db.query(
+        'SELECT p.* FROM preventatives p JOIN pets ON p.pet_id = pets.id WHERE p.id = $1 AND pets.user_id = $2',
+        [preventativeId, internalId]
+      );
+
+      if (preventative.rows.length === 0) {
+        res.status(404).json({ error: 'Preventative not found or unauthorized' });
+        return;
+      }
+
+      // Get completion status
+      const completion = await db.query(
+        'SELECT * FROM preventative_completions WHERE preventative_id = $1 AND completion_date = $2',
+        [preventativeId, date]
+      );
+
+      if (completion.rows.length === 0) {
+        res.json(null);
+        return;
+      }
+
+      res.json(completion.rows[0]);
+    } catch (error) {
+      console.error('Error getting preventative completion:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 router.get(
   '/pets/:petId/preventatives',
   ensureAuthenticated,
@@ -147,5 +221,43 @@ router.get(
     }
   }
 );
+// 1B. Mark a preventative complete
+router.post(
+  '/preventatives/:prevId/complete',
+  ensureAuthenticated,
+  async (req: Request, res: Response) => {
+    const userId = req.auth!.internalId;
+    const prevId = +req.params.prevId;
+    const { date } = req.body as { date: string };
+    const { rows } = await db.query(
+      `INSERT INTO preventative_completions
+         (preventative_id, completion_date, owner_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (preventative_id, completion_date, owner_id) DO NOTHING
+       RETURNING *`,
+      [prevId, date, userId]
+    );
+    res.json(rows[0] || null);
+  }
+);
 
+// 1C. Check completion status for a date
+router.get(
+  '/preventatives/:prevId/completions/:date',
+  ensureAuthenticated,
+  async (req: Request, res: Response) => {
+    const userId = req.auth!.internalId;
+    const prevId = +req.params.prevId;
+    const date = req.params.date;
+    const { rows } = await db.query(
+      `SELECT *
+       FROM preventative_completions
+       WHERE preventative_id = $1
+         AND completion_date = $2
+         AND owner_id = $3`,
+      [prevId, date, userId]
+    );
+    res.json(rows[0] || null);
+  }
+);
 export default router;

@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS vet_actions (
+  id SERIAL PRIMARY KEY,
+  pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  notes TEXT NOT NULL,
+  action_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_vet_actions_pet_id ON vet_actions(pet_id);

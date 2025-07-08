@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_URL } from '../config';
-import { Container, Row, Col, Alert, Button, Card } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Card } from 'react-bootstrap';
 import Calendar from 'react-calendar';
 import { useAuth } from '@clerk/clerk-react';
 import 'react-calendar/dist/Calendar.css';
@@ -13,8 +13,9 @@ import {
   fetchPet,
   fetchDailyTasks,
   markTaskComplete,
+
   type Pet,
-  type DailyTask,
+  type Task,
   type TaskCompletion
 } from '../utils/fetchPets';
 
@@ -26,7 +27,7 @@ const PetProfile: React.FC = () => {
   const { getToken } = useAuth();
 
   const [pet, setPet] = React.useState<Pet | null>(null);
-  const [tasks, setTasks] = React.useState<DailyTask[]>([]);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
   const [completedTasks, setCompletedTasks] = React.useState<TaskCompletion[]>([]);
   const [selectedDate, setSelectedDate] = React.useState(() => {
     const now = new Date();
@@ -89,18 +90,6 @@ const PetProfile: React.FC = () => {
     fetchCompletions();
   }, [tasks, selectedDate, getToken]);
 
-  const handleComplete = async (task: DailyTask) => {
-    try {
-      const dateStr = selectedDate.toISOString().split('T')[0];
-      const completion = await markTaskComplete(task.id.toString(), dateStr, getToken);
-      setCompletedTasks(prev => [...prev, completion]);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to mark complete');
-      setTimeout(() => setError(null), 5000);
-    }
-  };
-
   if (loading || !pet) {
     return (
       <Container className="text-center mt-4">
@@ -159,36 +148,50 @@ const PetProfile: React.FC = () => {
               {tasks.length === 0 ? (
                 <p className="text-muted">No tasks added yet. Add tasks in settings.</p>
               ) : (
-                tasks.map(task => {
-                  const done = completedTasks.some(c => c.task_id === task.id);
-                  const isPreventative = task.task_type === 'preventative';
-                  return (
-                    <div
-                      key={task.id}
-                      className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded"
-                      style={{
-                        backgroundColor: isPreventative ? '#fff3cd' : 'transparent',
-                        borderColor: isPreventative ? '#ffeeba' : undefined
-                      }}
-                    >
-                      <div>
-                        <span className={done ? 'text-muted text-decoration-line-through' : ''}>
-                          {task.task_name}
-                        </span>
-                        {isPreventative && (
-                          <span className="ms-2 badge bg-warning text-dark">Preventative</span>
-                        )}
+                (() => {
+                  const dateStr = selectedDate.toISOString().split('T')[0];
+                  return tasks.map(task => {
+                    // Preventative IDs are 90001 and above
+                    const isPreventative = task.id >= 90001;
+                    const done = completedTasks.some(c => c.task_id === task.id);
+                    return (
+                      <div
+                        key={task.id}
+                        className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded"
+                        style={{
+                          backgroundColor: isPreventative ? '#fff3cd' : 'transparent',
+                          borderColor: isPreventative ? '#ffeeba' : undefined
+                        }}
+                      >
+                        <div>
+                          <span className={done ? 'text-muted text-decoration-line-through' : ''}>
+                            {task.task_name}
+                          </span>
+                          {isPreventative && (
+                            <span className="ms-2 badge bg-warning text-dark">Preventative</span>
+                          )}
+                        </div>
+                        <div style={{ flexShrink: 0 }}>
+                          <CircularCheckButton
+                            onClick={async () => {
+                              try {
+                                const completion = await markTaskComplete(task.id.toString(), dateStr, getToken);
+                                if (completion) {
+                                  setCompletedTasks(prev => [...prev, completion]);
+                                }
+                              } catch (err) {
+                                console.error('Error marking task complete:', err);
+                                setError('Failed to mark task complete');
+                              }
+                            }}
+                            ariaLabel={done ? 'Done' : 'Mark Complete'}
+                            disabled={done}
+                          />
+                        </div>
                       </div>
-                      <div style={{ flexShrink: 0 }}>
-                        <CircularCheckButton
-                          onClick={() => handleComplete(task)}
-                          ariaLabel={done ? 'Done' : 'Mark Complete'}
-                          disabled={done}
-                        />
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  });
+                })()
               )}
             </Card.Body>
           </Card>
