@@ -1,0 +1,29 @@
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+.task-item-preventative {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+}
+
+.task-completed {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.task-button-container {
+  flex-shrink: 0;
+}
+
+.preventative-badge {
+  margin-left: 0.5rem;
+  background-color: #ffc107;
+  color: #212529;
+}
