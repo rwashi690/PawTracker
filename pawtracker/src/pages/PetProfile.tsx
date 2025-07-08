@@ -157,11 +157,7 @@ const PetProfile: React.FC = () => {
                     return (
                       <div
                         key={task.id}
-                        className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded"
-                        style={{
-                          backgroundColor: isPreventative ? '#fff3cd' : 'transparent',
-                          borderColor: isPreventative ? '#ffeeba' : undefined
-                        }}
+                        className={`d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${isPreventative ? 'bg-warning bg-opacity-10 border-warning' : ''}`}
                       >
                         <div>
                           <span className={done ? 'text-muted text-decoration-line-through' : ''}>
@@ -171,7 +167,7 @@ const PetProfile: React.FC = () => {
                             <span className="ms-2 badge bg-warning text-dark">Preventative</span>
                           )}
                         </div>
-                        <div style={{ flexShrink: 0 }}>
+                        <div className="flex-shrink-0">
                           <CircularCheckButton
                             onClick={async () => {
                               try {
