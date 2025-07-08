@@ -227,7 +227,7 @@ router.post(
   ensureAuthenticated,
   async (req: Request, res: Response) => {
     const userId = req.auth!.internalId;
-    const prevId = +req.params.prevId;
+    const prevId = +(req.params.prevId || '0');
     const { date } = req.body as { date: string };
     const { rows } = await db.query(
       `INSERT INTO preventative_completions
@@ -247,7 +247,7 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response) => {
     const userId = req.auth!.internalId;
-    const prevId = +req.params.prevId;
+    const prevId = +(req.params.prevId || '0');
     const date = req.params.date;
     const { rows } = await db.query(
       `SELECT *
