@@ -1,7 +1,7 @@
 // src/components/PetGrid.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../config';
-import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
+import { Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
 import { useAuth } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
