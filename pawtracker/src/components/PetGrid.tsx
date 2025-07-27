@@ -1,10 +1,10 @@
 // src/components/PetGrid.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { API_URL } from '../config';
 import { Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
 import { useAuth } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
+import { API_URL } from '../config';
 import '../styles/PetGrid.css';
 
 interface Pet {
@@ -117,8 +117,13 @@ const PetGrid: React.FC = () => {
       ) : (
         <Row xs={1} sm={2} md={3} lg={4} className="g-4">
           {pets.map((pet) => (
-            <Col key={pet.id}>
-              <PetCircle pet={pet} onUpdate={fetchPets} />
+
+            <Col key={pet.id} xs={12} sm="auto">
+              <PetCircle
+                id={pet.id}
+                imageUrl={`${API_URL}${pet.image_url}`}
+                name={pet.name}
+              />
             </Col>
           ))}
         </Row>

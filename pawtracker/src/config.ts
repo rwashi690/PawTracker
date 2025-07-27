@@ -1,5 +1,13 @@
-// Get API URL from environment variables or use default
-export const API_URL = process.env.REACT_APP_API_URL || 'https://pawtracker.fly.dev';
+// Force localhost in development, use environment variable in production
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:3001' 
+  : process.env.REACT_APP_API_URL || 'https://pawtracker.fly.dev';
 
-// Log the API URL for debugging
-console.log('Using API URL:', API_URL);
+// Debug log
+console.log('API Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+  Using_API_URL: API_URL
+});
+
+export { API_URL };
