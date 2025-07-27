@@ -28,20 +28,44 @@ const PetGrid: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Get the authentication token
       const token = await getToken();
+      console.log('Auth token retrieved:', token ? 'Token exists' : 'No token');
+      
       if (!token) {
-        setError('Not authenticated. Please sign in.');
+        const errorMsg = 'Not authenticated. Please sign in.';
+        console.error(errorMsg);
+        setError(errorMsg);
         return;
       }
+
+      console.log('Fetching pets from:', `${API_URL}/api/pets`);
       const res = await fetch(`${API_URL}/api/pets`, {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include', // Important for sending cookies with CORS
       });
-      if (!res.ok) throw new Error('Failed to fetch pets');
-      setPets(await res.json());
+
+      console.log('Response status:', res.status, res.statusText);
+      
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error('Error response:', errorData);
+        throw new Error(`Failed to fetch pets: ${res.status} ${res.statusText}`);
+      }
+      
+      const data = await res.json();
+      console.log('Pets data received:', data);
+      setPets(data);
+      
     } catch (err) {
-      console.error('Error fetching pets:', err);
-      setError('Failed to load pets. Please try again.');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load pets';
+      console.error('Error in fetchPets:', errorMsg, err);
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }

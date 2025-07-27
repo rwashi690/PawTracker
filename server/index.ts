@@ -27,25 +27,34 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(
-  cors({
-    origin: [
-      'http://localhost:3000',
-      'https://pawtracker.fly.dev',
-      'https://pawtracker25.netlify.app',
-      process.env.FRONTEND_URL, // Allow configurable frontend URL
-    ].filter((url): url is string => Boolean(url)),
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'clerk-token',
-      'Clerk-Session-Id',
-      'Clerk-Session-Token',
-    ],
-  })
-);
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://pawtracker.fly.dev',
+  'https://pawtracker25.netlify.app',
+  process.env.FRONTEND_URL,
+].filter((url): url is string => Boolean(url));
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, clerk-token, Clerk-Session-Id, Clerk-Session-Token'
+  );
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 app.use(express.json());
 
 // Health check endpoint
