@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
 import '../styles/PetGrid.css';
 import { API_URL } from '../config';
@@ -17,6 +17,7 @@ interface Pet {
 
 const PetGrid: React.FC = () => {
   const { getToken } = useAuth();
+  const { signOut } = useClerk();
   const [pets, setPets] = useState<Pet[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newPetName, setNewPetName] = useState('');
@@ -29,8 +30,8 @@ const PetGrid: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Get the authentication token
-      const token = await getToken();
+      // Get the authentication token with template string
+      const token = await getToken({ template: 'pawtracker' });
       console.log('Auth token retrieved:', token ? 'Token exists' : 'No token');
       
       if (!token) {
@@ -40,21 +41,36 @@ const PetGrid: React.FC = () => {
         return;
       }
 
+      // Log token details (first 10 chars for security)
+      console.log('Token starts with:', token.substring(0, 10) + '...');
+      
       console.log('Fetching pets from:', `${API_URL}/api/pets`);
+      
       const res = await fetch(`${API_URL}/api/pets`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Clerk-Session-Id': 'true'  // Helps with Clerk session verification
         },
-        credentials: 'include', // Important for sending cookies with CORS
+        credentials: 'include',
       });
 
       console.log('Response status:', res.status, res.statusText);
       
       if (!res.ok) {
-        const errorData = await res.text();
-        console.error('Error response:', errorData);
+        const errorText = await res.text();
+        console.error('Error response:', errorText);
+        
+        // If unauthorized, try to get a fresh token
+        if (res.status === 401) {
+          console.log('Attempting to refresh token...');
+          // Sign out and redirect to sign-in to get a fresh token
+          await signOut();
+          window.location.href = '/sign-in';
+          return;
+        }
+        
         throw new Error(`Failed to fetch pets: ${res.status} ${res.statusText}`);
       }
       
@@ -65,11 +81,17 @@ const PetGrid: React.FC = () => {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load pets';
       console.error('Error in fetchPets:', errorMsg, err);
-      setError(errorMsg);
+      
+      // More specific error handling
+      if (errorMsg.includes('401')) {
+        setError('Authentication failed. Please sign in again.');
+      } else {
+        setError('Failed to load pets. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, signOut]);
 
   useEffect(() => { fetchPets(); }, [fetchPets]);
 
