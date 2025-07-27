@@ -13,7 +13,11 @@ const createUserInDatabase = async (
     const token = await getToken();
     if (!token) throw new Error('Failed to get authentication token');
 
-    const response = await fetch(`${API_URL}/api/users`, {
+    const url = `${API_URL}/api/users`;
+    console.log('Making request to:', url);
+    console.log('Using token:', token ? 'Token present' : 'No token');
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,18 +31,32 @@ const createUserInDatabase = async (
       }),
     });
 
-    const contentType = response.headers.get('content-type');
+    console.log('Response status:', response.status);
+    
+    // Get the response text first
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+    
     let data: any;
-
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      data = { error: text };
+    try {
+      // Try to parse as JSON
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (e) {
+      console.error('Failed to parse response as JSON:', e);
+      // If it's not JSON, use the raw text as error
+      throw new Error(`Invalid response from server: ${responseText.substring(0, 200)}`);
     }
 
-    if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
-      throw new Error(data.error || 'Failed to create user in database');
+    if (!response.ok) {
+      // Check for duplicate key error (PostgreSQL error)
+      const isDuplicateError = 
+        data.error?.includes('users_clerk_id_key') || 
+        data.error?.includes('duplicate key');
+        
+      if (!isDuplicateError) {
+        throw new Error(data.error || `Request failed with status ${response.status}`);
+      }
+      // If it's a duplicate error, we can continue as the user already exists
     }
 
     return data;
