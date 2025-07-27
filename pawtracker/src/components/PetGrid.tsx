@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
-import { useAuth, useClerk } from '@clerk/clerk-react';
+import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
 import '../styles/PetGrid.css';
 import { API_URL } from '../config';
@@ -25,19 +25,27 @@ const PetGrid: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { isSignedIn } = useUser();
+  
   const fetchPets = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Get the authentication token with template string
-      const token = await getToken({ template: 'pawtracker' });
+      // First, ensure user is signed in
+      if (!isSignedIn) {
+        console.log('User not signed in, redirecting to sign in');
+        window.location.href = '/sign-in';
+        return;
+      }
+      
+      // Get the authentication token
+      const token = await getToken();
       console.log('Auth token retrieved:', token ? 'Token exists' : 'No token');
       
       if (!token) {
-        const errorMsg = 'Not authenticated. Please sign in.';
-        console.error(errorMsg);
-        setError(errorMsg);
+        console.error('No token available, redirecting to sign in');
+        window.location.href = '/sign-in';
         return;
       }
 
@@ -51,7 +59,7 @@ const PetGrid: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Clerk-Session-Id': 'true'  // Helps with Clerk session verification
+          'Clerk-Session-Id': 'true'
         },
         credentials: 'include',
       });
@@ -62,10 +70,8 @@ const PetGrid: React.FC = () => {
         const errorText = await res.text();
         console.error('Error response:', errorText);
         
-        // If unauthorized, try to get a fresh token
         if (res.status === 401) {
-          console.log('Attempting to refresh token...');
-          // Sign out and redirect to sign-in to get a fresh token
+          console.log('Authentication failed, signing out...');
           await signOut();
           window.location.href = '/sign-in';
           return;
@@ -82,16 +88,18 @@ const PetGrid: React.FC = () => {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load pets';
       console.error('Error in fetchPets:', errorMsg, err);
       
-      // More specific error handling
-      if (errorMsg.includes('401')) {
-        setError('Authentication failed. Please sign in again.');
+      if (errorMsg.includes('401') || errorMsg.includes('token')) {
+        setError('Your session has expired. Please sign in again.');
+        await signOut();
+        window.location.href = '/sign-in';
       } else {
         setError('Failed to load pets. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, signOut]);
+  }, [getToken, signOut, isSignedIn]);
+
 
   useEffect(() => { fetchPets(); }, [fetchPets]);
 
@@ -109,27 +117,49 @@ const PetGrid: React.FC = () => {
 
     try {
       const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      const form = new FormData();
-      form.append('name', newPetName);
-      form.append('image', selectedImage);
+      if (!token) {
+        console.error('No authentication token available');
+        await signOut();
+        window.location.href = '/sign-in';
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('name', newPetName);
+      formData.append('image', selectedImage);
 
       const res = await fetch(`${API_URL}/api/pets`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Clerk-Session-Id': 'true'
+        },
+        body: formData,
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Failed to add pet');
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Error adding pet:', res.status, errorText);
+        
+        if (res.status === 401) {
+          await signOut();
+          window.location.href = '/sign-in';
+          return;
+        }
+        
+        throw new Error(errorText || 'Failed to add pet');
+      }
 
       const addedPet = await res.json();
-      setPets((ps) => [...ps, addedPet]);
+      setPets((currentPets) => [...currentPets, addedPet]);
       setShowModal(false);
       setNewPetName('');
       setSelectedImage(null);
-    } catch (err) {
-      console.error('Error adding pet:', err);
-      setError('Failed to add pet. Please try again.');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to add pet';
+      console.error('Error in handleSubmit:', errorMsg, error);
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
