@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
-import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import PetCircle from './PetCircle';
 import '../styles/PetGrid.css';
 import { API_URL } from '../config';
@@ -17,7 +17,6 @@ interface Pet {
 
 const PetGrid: React.FC = () => {
   const { getToken } = useAuth();
-  const { signOut } = useClerk();
   const [pets, setPets] = useState<Pet[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newPetName, setNewPetName] = useState('');
@@ -34,23 +33,18 @@ const PetGrid: React.FC = () => {
       
       // First, ensure user is signed in
       if (!isSignedIn) {
-        console.log('User not signed in, redirecting to sign in');
-        window.location.href = '/sign-in';
+        console.log('User not signed in, not fetching pets');
         return;
       }
       
       // Get the authentication token
       const token = await getToken();
-      console.log('Auth token retrieved:', token ? 'Token exists' : 'No token');
+      console.log('Auth token retrieved');
       
       if (!token) {
-        console.error('No token available, redirecting to sign in');
-        window.location.href = '/sign-in';
+        console.error('No token available');
         return;
       }
-
-      // Log token details (first 10 chars for security)
-      console.log('Token starts with:', token.substring(0, 10) + '...');
       
       console.log('Fetching pets from:', `${API_URL}/api/pets`);
       
@@ -71,9 +65,7 @@ const PetGrid: React.FC = () => {
         console.error('Error response:', errorText);
         
         if (res.status === 401) {
-          console.log('Authentication failed, signing out...');
-          await signOut();
-          window.location.href = '/sign-in';
+          setError('Your session has expired. Please sign in again.');
           return;
         }
         
@@ -90,15 +82,13 @@ const PetGrid: React.FC = () => {
       
       if (errorMsg.includes('401') || errorMsg.includes('token')) {
         setError('Your session has expired. Please sign in again.');
-        await signOut();
-        window.location.href = '/sign-in';
       } else {
-        setError('Failed to load pets. Please try again.');
+        setError('Failed to load pets. Please try again later.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, signOut, isSignedIn]);
+  }, [getToken, isSignedIn]);
 
 
   useEffect(() => { fetchPets(); }, [fetchPets]);
@@ -119,8 +109,7 @@ const PetGrid: React.FC = () => {
       const token = await getToken();
       if (!token) {
         console.error('No authentication token available');
-        await signOut();
-        window.location.href = '/sign-in';
+        setError('Please sign in to add a pet');
         return;
       }
       
@@ -143,8 +132,7 @@ const PetGrid: React.FC = () => {
         console.error('Error adding pet:', res.status, errorText);
         
         if (res.status === 401) {
-          await signOut();
-          window.location.href = '/sign-in';
+          setError('Your session has expired. Please sign in again.');
           return;
         }
         
@@ -156,6 +144,9 @@ const PetGrid: React.FC = () => {
       setShowModal(false);
       setNewPetName('');
       setSelectedImage(null);
+      
+      // Refresh the pets list
+      fetchPets();
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to add pet';
       console.error('Error in handleSubmit:', errorMsg, error);
