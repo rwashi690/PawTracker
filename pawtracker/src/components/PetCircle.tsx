@@ -3,36 +3,43 @@ import { Image } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/PetCircle.css';
 
-interface Pet {
-  id: number;
-  name: string;
-  image_url: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface PetCircleProps {
-  pet: Pet;
-  onUpdate: () => Promise<void>;
+  id?: number;
+  imageUrl?: string;
+  name?: string;
+  isAddButton?: boolean;
+  onClick?: () => void;
 }
 
-const PetCircle: React.FC<PetCircleProps> = ({ pet, onUpdate }) => {
+const PetCircle: React.FC<PetCircleProps> = ({
+  id,
+  imageUrl,
+  name,
+  isAddButton,
+  onClick,
+}) => {
   const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`/pet/${pet.id}`);
-  };
-
   return (
-    <div className="pet-circle" onClick={handleClick}>
-      <div className="pet-image-container">
-        {pet.image_url ? (
-          <Image src={pet.image_url} alt={pet.name} roundedCircle fluid />
+    <div className="text-center">
+      <div
+        className={`pet-circle ${isAddButton ? 'add-button' : ''}`}
+        onClick={isAddButton ? onClick : () => id && navigate(`/pet/${id}`)}
+      >
+        {isAddButton ? (
+          <i className="bi bi-plus-lg"></i>
         ) : (
-          <div className="pet-initial">{pet.name?.charAt(0).toUpperCase()}</div>
+          imageUrl && (
+            <>
+              {console.log('Loading image from URL:', imageUrl)}
+              <Image src={imageUrl} alt={name} onError={(e) => {
+                console.error('Image failed to load:', imageUrl);
+                console.error('Error event:', e);
+              }} />
+            </>
+          )
         )}
       </div>
-      <div className="pet-name">{pet.name}</div>
+      {name && <div className="pet-name">{name}</div>}
     </div>
   );
 };
