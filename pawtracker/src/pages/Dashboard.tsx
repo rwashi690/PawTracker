@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { UserButton, useUser, useAuth } from '@clerk/clerk-react';
+import { API_URL } from '../config';
 
 import PetGrid from '../components/PetGrid';
 
@@ -12,7 +13,7 @@ const createUserInDatabase = async (
     const token = await getToken();
     if (!token) throw new Error('Failed to get authentication token');
 
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users`, {
+    const response = await fetch(`${API_URL}/api/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -46,42 +47,6 @@ const createUserInDatabase = async (
     throw error instanceof Error ? error : new Error(String(error));
   }
 };
-
-// const createUserInDatabase = async (user: any) => {
-//   try {
-//     const token = await user.getToken();
-//     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users`, {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'Authorization': `Bearer ${token}`,
-//       },
-//       body: JSON.stringify({
-//         clerkId: user.id,
-//         email: user.primaryEmailAddress?.emailAddress,
-//         firstName: user.firstName,
-//         lastName: user.lastName,
-//       }),
-//     });
-
-//     const data = await response.json();
-
-//     // If we get a duplicate key error, that's fine - the user already exists
-//     if (!response.ok && !data.error?.includes('users_clerk_id_key')) {
-//       throw new Error(data.error || 'Failed to create user in database');
-//     }
-
-//     return data;
-//   } catch (error) {
-//     console.error('Error creating user:', error);
-//     // If it's already an Error object, throw it as is
-//     if (error instanceof Error) {
-//       throw error;
-//     }
-//     // Otherwise wrap it in an Error object
-//     throw new Error('Failed to create user in database');
-//   }
-// };
 
 const Dashboard = () => {
   const { user } = useUser();

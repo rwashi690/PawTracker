@@ -1,5 +1,6 @@
 // src/components/PetGrid.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../config';
 import { Container, Row, Col, Modal, Form, Alert, Spinner } from 'react-bootstrap';
 import PawButton from './PawButton';
 import { useAuth } from '@clerk/clerk-react';
@@ -32,7 +33,7 @@ const PetGrid: React.FC = () => {
         setError('Not authenticated. Please sign in.');
         return;
       }
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/pets`, {
+      const res = await fetch(`${API_URL}/api/pets`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
@@ -48,100 +49,99 @@ const PetGrid: React.FC = () => {
 
   useEffect(() => { fetchPets(); }, [fetchPets]);
 
-  const handleAddPet = () => setShowModal(true);
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setSelectedImage(e.target.files[0]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAddPet = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPetName || !selectedImage) return;
+    if (!newPetName.trim() || !selectedImage) return;
 
-    setIsLoading(true);
-    setError(null);
+    const formData = new FormData();
+    formData.append('name', newPetName);
+    formData.append('image', selectedImage);
 
     try {
+      setIsLoading(true);
+      setError(null);
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
-      const form = new FormData();
-      form.append('name', newPetName);
-      form.append('image', selectedImage);
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/pets`, {
+      const res = await fetch(`${API_URL}/api/pets`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
-      if (!res.ok) throw new Error('Failed to add pet');
 
-      const addedPet = await res.json();
-      setPets((ps) => [...ps, addedPet]);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add pet');
+      }
+
+      const newPet = await res.json();
+      setPets([...pets, newPet]);
       setShowModal(false);
       setNewPetName('');
       setSelectedImage(null);
     } catch (err) {
       console.error('Error adding pet:', err);
-      setError('Failed to add pet. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to add pet');
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <Container className="py-4">
-      {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible>
-          {error}
-        </Alert>
-      )}
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
 
-      {isLoading && pets.length === 0 ? (
-        <div className="text-center my-5">
-          <Spinner animation="border" role="status" />
+  return (
+    <div className="pet-grid">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Pets</h2>
+        <PawButton onClick={() => setShowModal(true)}>+ Add Pet</PawButton>
+      </div>
+
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {isLoading ? (
+        <div className="text-center">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
         </div>
       ) : pets.length === 0 ? (
-        <div className="text-center py-4">
-          <p className="text-muted mb-3">No pets added yet.</p>
-          <PawButton onClick={handleAddPet} className="btn-primary">
-            Add Pet
-          </PawButton>
+        <div className="text-center py-5">
+          <p>No pets added yet. Add your first pet!</p>
         </div>
       ) : (
-        <Row className="g-3">
+        <Row xs={1} sm={2} md={3} lg={4} className="g-4">
           {pets.map((pet) => (
-            <Col key={pet.id} xs={12} sm="auto">
-              <PetCircle
-                id={pet.id}
-                imageUrl={`${process.env.REACT_APP_API_URL}${pet.image_url}`}
-                name={pet.name}
-              />
+            <Col key={pet.id}>
+              <PetCircle pet={pet} onUpdate={fetchPets} />
             </Col>
           ))}
-          <Col xs={12} sm="auto">
-            <PetCircle isAddButton onClick={handleAddPet} />
-          </Col>
         </Row>
       )}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Add New Pet</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleAddPet}>
+          <Modal.Body>
             <Form.Group className="mb-3">
               <Form.Label>Pet Name</Form.Label>
               <Form.Control
                 type="text"
                 value={newPetName}
                 onChange={(e) => setNewPetName(e.target.value)}
+                placeholder="Enter pet name"
                 required
               />
             </Form.Group>
-
             <Form.Group className="mb-3">
-              <Form.Label>Pet Photo</Form.Label>
+              <Form.Label>Pet Image</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -149,19 +149,18 @@ const PetGrid: React.FC = () => {
                 required
               />
             </Form.Group>
-
-            <div className="d-flex gap-2">
-              <PawButton onClick={() => setShowModal(false)} className="flex-fill">
-                Cancel
-              </PawButton>
-              <PawButton type="submit" disabled={isLoading} className="flex-fill">
-                {isLoading ? 'Adding…' : 'Add Pet'}
-              </PawButton>
-            </div>
-          </Form>
-        </Modal.Body>
+          </Modal.Body>
+          <Modal.Footer>
+            <PawButton variant="secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </PawButton>
+            <PawButton type="submit" disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add Pet'}
+            </PawButton>
+          </Modal.Footer>
+        </Form>
       </Modal>
-    </Container>
+    </div>
   );
 };
 
