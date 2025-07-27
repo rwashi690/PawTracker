@@ -6,7 +6,8 @@
     "build": "tsc --project tsconfig.json",
     "postinstall": "npm run build",
     "dev": "nodemon --experimental-specifier-resolution=node --exec node --loader ts-node/esm index.ts",
-    "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts"
+    "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts",
+    "render-build": "npm run build"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
