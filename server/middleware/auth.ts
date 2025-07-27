@@ -32,10 +32,13 @@ export const ensureAuthenticated = (
     console.log('🔒 Auth Middleware - Request details:', {
       url: req.originalUrl,
       method: req.method,
-      authHeader: req.headers.authorization,
-      clerkToken: req.headers['clerk-token'],
-      sessionId: req.headers['clerk-session-id'],
-      sessionToken: req.headers['clerk-session-token'],
+      headers: {
+        authorization: req.headers.authorization ? 'Present' : 'Missing',
+        'clerk-token': req.headers['clerk-token'] ? 'Present' : 'Missing',
+        'clerk-session-id': req.headers['clerk-session-id'] ? 'Present' : 'Missing',
+        'clerk-session-token': req.headers['clerk-session-token'] ? 'Present' : 'Missing',
+      },
+      timestamp: new Date().toISOString()
     });
 
     console.log('🔑 Clerk Configuration:', {

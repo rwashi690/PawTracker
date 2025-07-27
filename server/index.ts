@@ -37,25 +37,42 @@ const allowedOrigins = [
 
 console.log('Allowed CORS origins:', allowedOrigins);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization, clerk-token, Clerk-Session-Id, Clerk-Session-Token'
-  );
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// CORS configuration
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked by CORS: ${origin} not in allowed origins`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'clerk-token', 'Clerk-Session-Id', 'Clerk-Session-Token'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
+
+// Apply CORS with options
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json());
+
+// API Routes
+const apiRouter = express.Router();
+apiRouter.use('/pets', petsRouter);
+apiRouter.use('/tasks', tasksRouter);
+apiRouter.use('/preventatives', preventativesRouter);
+
+// Mount API router
+app.use('/api', apiRouter);
+
+// Catch-all for undefined routes
+app.use((req, res) => {
+  console.warn(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Route not found' });
+});
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
