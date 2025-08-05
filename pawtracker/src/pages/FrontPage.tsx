@@ -22,7 +22,6 @@ const FrontPage: React.FC = () => {
     >
       <div className="content-container">
         <h1>Welcome to PawTracker!</h1>
-        <h2>Currently fly.io is down so the app doesn't work please be patient</h2>
         <p>Keep track of your pets' information in one place</p>
         <div className="button-container">
           {!isSignedIn ? (
