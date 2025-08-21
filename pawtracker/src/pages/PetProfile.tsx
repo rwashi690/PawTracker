@@ -13,6 +13,7 @@ import {
   fetchPet,
   fetchDailyTasks,
   markTaskComplete,
+  filterPreventativesForDate,
 
   type Pet,
   type Task,
@@ -43,12 +44,45 @@ const PetProfile: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Log the selected date for debugging
+        console.log('🗓️ Selected date in PetProfile:', {
+          date: selectedDate.toISOString(),
+          localDate: selectedDate.toLocaleDateString(),
+          day: selectedDate.getDate(),
+          month: selectedDate.getMonth() + 1, // 1-indexed for readability
+          year: selectedDate.getFullYear()
+        });
+        
         const [petData, tasksData] = await Promise.all([
           fetchPet(id, getToken),
           fetchDailyTasks(id, getToken, selectedDate)
         ]);
+        
+        // Split tasks and preventatives
+        const regularTasks = tasksData.filter(task => task.task_type !== 'preventative');
+        const allPreventatives = tasksData.filter(task => task.task_type === 'preventative');
+        
+        console.log('📊 Tasks data from API:', {
+          totalTasks: tasksData.length,
+          regularTasks: regularTasks.length,
+          preventatives: allPreventatives.length,
+          preventativeSample: allPreventatives.slice(0, 3)
+        });
+        
+        // Apply last-day-of-month logic to filter preventatives for the selected date
+        const filteredPreventatives = filterPreventativesForDate(allPreventatives, selectedDate);
+        
+        console.log('🔄 Filtered preventatives result:', {
+          date: selectedDate.toLocaleDateString(),
+          allPreventatives: allPreventatives.length,
+          filteredPreventatives: filteredPreventatives.length,
+          filteredSample: filteredPreventatives.slice(0, 3)
+        });
+        
+        // Combine regular tasks with filtered preventatives
         setPet(petData);
-        setTasks(tasksData);
+        setTasks([...regularTasks, ...filteredPreventatives]);
       } catch (err: any) {
         console.error('Error fetching pet data:', err);
         setError(err.message || 'Failed to load data');

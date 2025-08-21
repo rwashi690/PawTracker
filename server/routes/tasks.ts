@@ -42,21 +42,32 @@ router.get(
     console.log('Selected date:', selectedDate);
     try {
       const petId = parseInt(req.params.petId || '0');
+      const userId = req.auth?.internalId;
 
-      // First verify the pet belongs to the user
-      const {
-        rows: [pet],
-      } = await db.query('SELECT user_id FROM pets WHERE id = $1', [petId]);
+      console.log('🐶 GET /pet/:petId route called with:', {
+        petId,
+        userId,
+        date: req.query.date,
+        params: req.params,
+        query: req.query
+      });
 
-      if (!pet) {
-        res.status(404).json({ error: 'Pet not found' });
+      // Verify pet ownership
+      const petOwnershipQuery = 'SELECT id FROM pets WHERE id = $1 AND user_id = $2';
+      const { rows: petRows } = await db.query(petOwnershipQuery, [petId, userId]);
+      
+      console.log('🔍 Pet ownership check result:', {
+        query: petOwnershipQuery,
+        params: [petId, userId],
+        found: petRows.length > 0
+      });
+      
+      if (petRows.length === 0) {
+        res.status(404).json({ error: 'Pet not found or not owned by user' });
         return;
       }
 
-      if (pet.user_id !== req.auth?.internalId) {
-        res.status(403).json({ error: 'Not authorized to view these tasks' });
-        return;
-      }
+      // We already verified pet ownership above, no need to check again
 
       // Get daily tasks
       const { rows: tasks } = await db.query(
@@ -86,7 +97,8 @@ router.get(
         allPreventatives
       });
 
-      // Get preventatives for selected day
+      // Get all preventatives for this pet (no date filtering - we'll do that in the frontend)
+      // IMPORTANT: Do NOT filter by due_day here - that will be handled in the frontend
       const preventativesQuery = `
         SELECT 
           p.id, 
@@ -97,15 +109,32 @@ router.get(
           'preventative' as task_type,
           p.due_day
         FROM preventatives p 
-        WHERE p.pet_id = $1 
-        AND p.due_day = $2`;
+        WHERE p.pet_id = $1`; // Only filter by pet_id, not due_day
 
-      const { rows: preventatives } = await db.query(preventativesQuery, [petId, selectedDay]);
-      console.log('Preventatives query result:', {
+      console.log('📌 Running preventatives query with petId:', petId);
+      
+      // First, check if there are any preventatives in the database at all
+      const { rows: allPreventativesCheck } = await db.query('SELECT COUNT(*) as count FROM preventatives');
+      console.log('📊 Total preventatives in database:', allPreventativesCheck[0]?.count || 0);
+      
+      // Then check if there are any preventatives for this specific pet
+      const { rows: petPreventativesCheck } = await db.query('SELECT * FROM preventatives WHERE pet_id = $1', [petId]);
+      console.log('📊 Preventatives found for pet_id', petId, ':', petPreventativesCheck.length);
+      
+      if (petPreventativesCheck.length > 0) {
+        console.log('📊 Sample preventative for this pet:', petPreventativesCheck[0]);
+      } else {
+        console.log('📊 No preventatives found for this pet. Available pet_ids with preventatives:');
+        const { rows: petsWithPreventatives } = await db.query('SELECT DISTINCT pet_id FROM preventatives');
+        console.log(petsWithPreventatives);
+      }
+      
+      const { rows: preventatives } = await db.query(preventativesQuery, [petId]);
+      console.log('📊 All preventatives query result:', {
         query: preventativesQuery,
-        params: [petId, selectedDay],
-        results: preventatives,
-        matches: allPreventatives.filter(p => p.due_day === selectedDay)
+        params: [petId],
+        count: preventatives.length,
+        results: preventatives
       });
 
       // Only include preventatives if a date was provided in the query
