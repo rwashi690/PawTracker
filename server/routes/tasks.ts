@@ -67,6 +67,59 @@ router.get(
       // Get preventatives due on selected date
       // Get the day of the month in the user's timezone
       const selectedDay = selectedDate.getDate();
+      const selectedMonth = selectedDate.getMonth(); // 0-based, 0 = Jan
+      const selectedYear = selectedDate.getFullYear();
+
+      // Helpers for month/day logic
+      const isLeapYear = (y: number) => (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+      const daysInMonth = (y: number, m0: number) => new Date(y, m0 + 1, 0).getDate();
+      const monthDays = daysInMonth(selectedYear, selectedMonth);
+
+      // Determine which due_day values should be considered for the selected date,
+      // according to the rules:
+      // - If due_day is 31: occurs on 31 in 31-day months, 30 in 30-day months,
+      //   and on 29 (leap Feb) or 28 (non-leap Feb).
+      // - If due_day is 30: occurs on 30 in non-Feb months, and on 28 in February (regardless of leap year per request).
+      // This means for a given selected date, we include preventatives whose stored due_day maps to this calendar day.
+      const dueDaysForSelectedDate: number[] = (() => {
+        // Default: only the exact day matches
+        const base: number[] = [selectedDay];
+
+        const isFeb = selectedMonth === 1; // February
+        const leap = isFeb && isLeapYear(selectedYear);
+
+        if (isFeb) {
+          // February handling
+          if (!leap) {
+            // Non-leap: Feb has 28 days
+            if (selectedDay === 28) {
+              // Show 28, plus mapped 30->28 and 31->28
+              return [28, 30, 31];
+            }
+            return base;
+          } else {
+            // Leap year: Feb has 29 days
+            if (selectedDay === 28) {
+              // 30 maps to 28 in Feb (per request), 31 does NOT map to 28 (maps to 29 in leap Feb)
+              return [28, 30];
+            }
+            if (selectedDay === 29) {
+              // 31 maps to 29 in leap Feb
+              return [29, 31];
+            }
+            return base;
+          }
+        }
+
+        // Non-February months
+        if (monthDays === 30 && selectedDay === 30) {
+          // 31st maps to 30 in 30-day months
+          return [30, 31];
+        }
+
+        // 31-day months: only exact 31
+        return base;
+      })();
 
       // Get all preventatives for this pet first
       const allPreventativesQuery = `SELECT * FROM preventatives WHERE pet_id = $1`;
@@ -86,7 +139,7 @@ router.get(
         allPreventatives
       });
 
-      // Get preventatives for selected day
+      // Get preventatives for selected date based on effective due day mapping
       const preventativesQuery = `
         SELECT 
           p.id, 
@@ -98,14 +151,20 @@ router.get(
           p.due_day
         FROM preventatives p 
         WHERE p.pet_id = $1 
-        AND p.due_day = $2`;
+          AND p.due_day = ANY($2::int[])`;
 
-      const { rows: preventatives } = await db.query(preventativesQuery, [petId, selectedDay]);
+      const { rows: preventatives } = await db.query(preventativesQuery, [petId, dueDaysForSelectedDate]);
       console.log('Preventatives query result:', {
         query: preventativesQuery,
-        params: [petId, selectedDay],
+        params: [petId, dueDaysForSelectedDate],
         results: preventatives,
-        matches: allPreventatives.filter(p => p.due_day === selectedDay)
+        mappingContext: {
+          selectedDay,
+          selectedMonth,
+          selectedYear,
+          monthDays
+        },
+        matches: allPreventatives.filter(p => dueDaysForSelectedDate.includes(p.due_day))
       });
 
       // Only include preventatives if a date was provided in the query
