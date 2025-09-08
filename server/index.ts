@@ -19,6 +19,7 @@ import { pool } from './db/db.js';
 import petsRouter from './routes/pets.js';
 import tasksRouter from './routes/tasks.js';
 import preventativesRouter from './routes/preventatives.js';
+import serviceDogTasksRouter from './routes/serviceDogTasks.js';
 import { ensureAuthenticated } from './middleware/auth.js';
 
 dotenv.config();
@@ -82,6 +83,7 @@ app.get('/api/test', (req: Request, res: Response) => {
 app.use('/api/pets', petsRouter);
 app.use('/api/tasks', tasksRouter); // Adding tasks routes
 app.use('/api/preventatives', preventativesRouter); // Adding preventatives routes
+app.use('/api/service-dog-tasks', serviceDogTasksRouter); // Adding service dog tasks routes
 
 // Health check endpoint
 app.get('/api/health', async (req: Request, res: Response): Promise<void> => {

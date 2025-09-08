@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_URL } from '../config';
-import { Container, Row, Col, Alert, Card } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Card, Button } from 'react-bootstrap';
 import Calendar from 'react-calendar';
 import { useAuth } from '@clerk/clerk-react';
 import 'react-calendar/dist/Calendar.css';
@@ -119,17 +119,33 @@ const PetProfile: React.FC = () => {
 
       {/* Centered Pet Image */}
       <div className="text-center mb-4">
-        <img
-          src={`${API_URL}${pet.image_url}`}
-          alt={pet.name}
-          className="rounded-circle"
-          style={{
-            width: '150px',
-            height: '150px',
-            objectFit: 'cover',
-            border: `4px solid ${PERIWINKLE}`
-          }}
-        />
+        {pet.image_url ? (
+          <img
+            src={pet.image_url.startsWith('http') ? pet.image_url : `${API_URL}${pet.image_url}`}
+            alt={pet.name}
+            className="rounded-circle"
+            style={{
+              width: '150px',
+              height: '150px',
+              objectFit: 'cover',
+              border: `4px solid ${PERIWINKLE}`
+            }}
+          />
+        ) : (
+          <div
+            className="rounded-circle d-flex align-items-center justify-content-center mx-auto"
+            style={{
+              width: '150px',
+              height: '150px',
+              backgroundColor: '#f0f0f0',
+              color: '#666',
+              fontSize: '48px',
+              border: `4px solid ${PERIWINKLE}`
+            }}
+          >
+            {pet.name?.charAt(0).toUpperCase() || '?'}
+          </div>
+        )}
       </div>
 
       <Row>
@@ -220,6 +236,16 @@ const PetProfile: React.FC = () => {
                   return hasDone ? 'bg-success text-white rounded' : '';
                 }}
               />
+            </Card.Body>
+          </Card>
+          <Card>
+            <Card.Header style={{ backgroundColor: PERIWINKLE, color: '#000' }}>
+              <h5 className="mb-0">Additional Pages</h5>
+            </Card.Header>
+            <Card.Body>
+              <Button onClick={() => navigate(`/pet/${pet.id}/servicetasks`)}>
+                Service Dog Tasks
+              </Button>
             </Card.Body>
           </Card>
         </Col>

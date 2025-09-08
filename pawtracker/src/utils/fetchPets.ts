@@ -191,3 +191,40 @@ export async function fetchPreventativeCompletion(prevId: number, date: string, 
   });
   return resp.json(); // completion record or null
 }
+
+export interface ServiceDogTask {
+  id: number;
+  pet_id: number;
+  task_name: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const fetchServiceDogTasks = async (
+  petId: string,
+  getToken: GetTokenFn
+): Promise<ServiceDogTask[]> => {
+  return makeAuthenticatedRequest(`/service-dog-tasks/pet/${petId}`, getToken);
+};
+
+export const createServiceDogTask = async (
+  petId: string,
+  taskName: string,
+  notes: string = '',
+  getToken: GetTokenFn
+): Promise<ServiceDogTask> => {
+  return makeAuthenticatedRequest(`/service-dog-tasks/pet/${petId}/tasks`, getToken, {
+    method: 'POST',
+    body: JSON.stringify({ task_name: taskName, notes }),
+  });
+};
+
+export const deleteServiceDogTask = async (
+  taskId: string,
+  getToken: GetTokenFn
+): Promise<void> => {
+  await makeAuthenticatedRequest(`/service-dog-tasks/${taskId}`, getToken, {
+    method: 'DELETE',
+  });
+};

@@ -1,6 +1,4 @@
 .pet-circle {
-  width: 120px;
-  height: 120px;
   border-radius: 50%;
   border: 3px solid #ccccff;
   overflow: hidden;
@@ -12,6 +10,21 @@
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
+  
+  /* Default size (md) */
+  width: 100px;
+  height: 100px;
+}
+
+/* Size variations */
+.pet-circle.sm {
+  width: 80px;
+  height: 80px;
+}
+
+.pet-circle.lg {
+  width: 150px;
+  height: 150px;
 }
 
 .pet-circle:hover {

@@ -1,0 +1,9 @@
+-- Create a new table for service dog tasks
+CREATE TABLE IF NOT EXISTS service_dog_tasks (
+    id INTEGER PRIMARY KEY,
+    pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+    task_name VARCHAR(255) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

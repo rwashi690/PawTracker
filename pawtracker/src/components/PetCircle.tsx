@@ -8,6 +8,7 @@ interface PetCircleProps {
   imageUrl?: string;
   name?: string;
   isAddButton?: boolean;
+  size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
 }
 
@@ -16,13 +17,14 @@ const PetCircle: React.FC<PetCircleProps> = ({
   imageUrl,
   name,
   isAddButton,
+  size = 'md', // Default to medium size
   onClick,
 }) => {
   const navigate = useNavigate();
   return (
     <div className="text-center">
       <div
-        className={`pet-circle ${isAddButton ? 'add-button' : ''}`}
+        className={`pet-circle ${isAddButton ? 'add-button' : ''} ${size}`}
         onClick={isAddButton ? onClick : () => id && navigate(`/pet/${id}`)}
       >
         {isAddButton ? (
