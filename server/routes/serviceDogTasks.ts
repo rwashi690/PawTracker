@@ -3,13 +3,6 @@ import type { Request, Response, NextFunction } from 'express';
 import { pool } from '../db/db.js';
 import { ensureAuthenticated } from '../middleware/auth.js';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    auth?: {
-      internalId: string;
-    };
-  }
-}
 
 const router = Router();
 

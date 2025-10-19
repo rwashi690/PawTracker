@@ -57,12 +57,7 @@ app.get('/health', (req: Request, res: Response) => {
 // Serve static files from uploads directory
 const uploadsPath = path.join(process.cwd(), 'uploads');
 console.log('Serving uploads from:', uploadsPath);
-app.use('/uploads', express.static(uploadsPath, {
-  setHeaders: (res, filePath) => {
-    console.log('Serving file:', filePath);
-    res.setHeader('Content-Type', 'image/jpeg');
-  }
-}));
+app.use('/uploads', express.static(uploadsPath));
 
 // Log middleware to debug image requests
 app.use('/uploads', (req, res, next) => {

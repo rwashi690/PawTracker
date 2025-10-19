@@ -243,9 +243,13 @@ const PetProfile: React.FC = () => {
               <h5 className="mb-0">Additional Pages</h5>
             </Card.Header>
             <Card.Body>
+            <Button onClick={() => navigate(`/pet/${pet.id}/files`)}>
+                Files
+              </Button>
               <Button onClick={() => navigate(`/pet/${pet.id}/servicetasks`)}>
                 Service Dog Tasks
               </Button>
+              
             </Card.Body>
           </Card>
         </Col>

@@ -4,14 +4,15 @@ import { Container, Button, Card, Spinner, Alert, Table, Form, Modal } from 'rea
 import { useAuth } from '@clerk/clerk-react';
 import BackButton from '../components/BackButton';
 import { API_URL } from '../config';
+import CircularPlusButton from '../components/CircularPlusButton';
 
 interface ServiceDogTask {
   id: number;
-  pet_id: number;
+  pet_id: string;
   task_name: string;
-  description: string;
-  frequency: string;
-  last_completed: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const ServiceDogTasks = () => {
@@ -23,11 +24,9 @@ const ServiceDogTasks = () => {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newTask, setNewTask] = useState<Omit<ServiceDogTask, 'id' | 'pet_id'>>({
+  const [newTask, setNewTask] = useState<Omit<ServiceDogTask, 'id' | 'pet_id' | 'created_at' | 'updated_at'>>({
     task_name: '',
-    description: '',
-    frequency: 'daily',
-    last_completed: new Date().toISOString().split('T')[0]
+    notes: null
   });
   const { getToken, sessionId } = useAuth();
   const navigate = useNavigate();
@@ -107,7 +106,7 @@ const ServiceDogTasks = () => {
         };
         if (sessionId) taskHeaders['Clerk-Session-Id'] = sessionId;
 
-        const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks`, {
+        const response = await fetch(`${API_URL}/api/pet/${petId}/servicetasks`, {
           headers: taskHeaders,
           credentials: 'include', // Important for sending cookies
         });
@@ -144,35 +143,31 @@ const ServiceDogTasks = () => {
     e.preventDefault();
     try {
       const token = await getToken();
-      const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks`, {
+      const response = await fetch(`${API_URL}/api/pet/${petId}/servicetasks`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(sessionId && { 'Clerk-Session-Id': sessionId })
         },
         body: JSON.stringify({
-          ...newTask,
-          pet_id: petId,
-          last_completed: newTask.last_completed || new Date().toISOString().split('T')[0]
-        })
+          task_name: newTask.task_name,
+          notes: newTask.notes
+        }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add task');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add service dog task');
       }
 
       const addedTask = await response.json();
-      setTasks([...tasks, addedTask]);
+      setTasks([addedTask, ...tasks]);
+      setNewTask({ task_name: '', notes: null });
       setShowAddModal(false);
-      setNewTask({
-        task_name: '',
-        description: '',
-        frequency: 'daily',
-        last_completed: new Date().toISOString().split('T')[0]
-      });
     } catch (err) {
-      console.error('Error adding task:', err);
-      setError('Failed to add task');
+      setError(err instanceof Error ? err.message : 'Failed to add service dog task');
     }
   };
 
@@ -190,7 +185,7 @@ const ServiceDogTasks = () => {
 
   return (
     <Container className="mt-4">
-<div className="d-flex align-items-center mb-4">
+      <div className="d-flex align-items-center mb-4">
         <BackButton onClick={() => navigate(`/pet/${petId}`)} />
         <h2 className="mb-0 ms-3">{pet?.name}'s Service Dog Tasks</h2>
       </div>
@@ -238,15 +233,11 @@ const ServiceDogTasks = () => {
         </div>
       )}
       <Card className="mb-4">
-        <Card.Header as="h5" className="d-flex justify-content-between align-items-center">
-          <span>Task List</span>
-          <Button 
-            variant="primary" 
-            size="sm"
-            onClick={() => setShowAddModal(true)}
-          >
-            + Add Task
-          </Button>
+        <Card.Header as="h5" className="d-flex justify-content-between align-items-center p-3">
+          <div className="flex-grow-1">Task List</div>
+          <div className="flex-shrink-0">
+            <CircularPlusButton onClick={() => setShowAddModal(true)} />
+          </div>
         </Card.Header>
         <Card.Body>
           {tasks.length === 0 ? (
@@ -256,9 +247,8 @@ const ServiceDogTasks = () => {
               <thead>
                 <tr>
                   <th>Task Name</th>
-                  <th>Description</th>
-                  <th>Frequency</th>
-                  <th>Last Completed</th>
+                  <th>Notes</th>
+                  <th>Created</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -266,9 +256,8 @@ const ServiceDogTasks = () => {
                 {tasks.map((task) => (
                   <tr key={task.id}>
                     <td>{task.task_name}</td>
-                    <td>{task.description}</td>
-                    <td>{task.frequency}</td>
-                    <td>{new Date(task.last_completed).toLocaleDateString()}</td>
+                    <td>{task.notes || '-'}</td>
+                    <td>{new Date(task.created_at).toLocaleDateString()}</td>
                     <td>
                       <Button 
                         variant="outline-primary" 
@@ -303,33 +292,13 @@ const ServiceDogTasks = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
+              <Form.Label>Notes</Form.Label>
               <Form.Control 
                 as="textarea" 
                 rows={3} 
-                value={newTask.description}
-                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Frequency</Form.Label>
-              <Form.Select 
-                value={newTask.frequency}
-                onChange={(e) => setNewTask({...newTask, frequency: e.target.value as any})}
-                aria-label="Select task frequency"
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="as_needed">As Needed</option>
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Last Completed</Form.Label>
-              <Form.Control 
-                type="date" 
-                value={newTask.last_completed}
-                onChange={(e) => setNewTask({...newTask, last_completed: e.target.value})}
+                value={newTask.notes || ''}
+                onChange={(e) => setNewTask({...newTask, notes: e.target.value || null})}
+                placeholder="Additional details about this service task (optional)"
               />
             </Form.Group>
           </Modal.Body>
