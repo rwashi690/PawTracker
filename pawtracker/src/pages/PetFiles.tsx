@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Alert, Form, ListGroup, Spinner } from 'react-bootstrap';
 import { useAuth } from '@clerk/clerk-react';
 import { API_URL } from '../config';
+import { fetchPet, type Pet } from '../utils/fetchPets';
 import BackButton from '../components/BackButton';
 import PawButton from '../components/PawButton';
 
@@ -27,6 +28,7 @@ const PetFiles: React.FC = () => {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [pet, setPet] = React.useState<Pet | null>(null);
 
   const fetchFiles = React.useCallback(async () => {
     if (!id) return;
@@ -89,6 +91,20 @@ const PetFiles: React.FC = () => {
     void fetchFiles();
   }, [fetchFiles]);
 
+  // Load pet info for header title
+  React.useEffect(() => {
+    const run = async () => {
+      if (!id) return;
+      try {
+        const p = await fetchPet(id, getToken);
+        setPet(p);
+      } catch (e) {
+        console.error('Failed to load pet for files header:', e);
+      }
+    };
+    void run();
+  }, [id, getToken]);
+
   const onUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !selectedFile) return;
@@ -138,7 +154,7 @@ const PetFiles: React.FC = () => {
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div className="d-flex align-items-center">
           <BackButton onClick={() => navigate(`/pet/${id}`)} />
-          <h1 className="mb-0 ms-3">Pet Files</h1>
+          <h1 className="mb-0 ms-3">{pet?.name}'s Files</h1>
         </div>
       </div>
 

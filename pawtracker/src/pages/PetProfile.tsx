@@ -13,6 +13,7 @@ import {
   fetchPet,
   fetchDailyTasks,
   markTaskComplete,
+  unmarkTaskComplete,
 
   type Pet,
   type Task,
@@ -188,17 +189,22 @@ const PetProfile: React.FC = () => {
                           <CircularCheckButton
                             onClick={async () => {
                               try {
-                                const completion = await markTaskComplete(task.id.toString(), dateStr, getToken);
-                                if (completion) {
-                                  setCompletedTasks(prev => [...prev, completion]);
+                                if (!done) {
+                                  const completion = await markTaskComplete(task.id.toString(), dateStr, getToken);
+                                  if (completion) {
+                                    setCompletedTasks(prev => [...prev, completion]);
+                                  }
+                                } else {
+                                  await unmarkTaskComplete(task.id.toString(), dateStr, getToken);
+                                  setCompletedTasks(prev => prev.filter(c => !(c.task_id === task.id && c.completion_date.split('T')[0] === dateStr)));
                                 }
                               } catch (err) {
-                                console.error('Error marking task complete:', err);
-                                setError('Failed to mark task complete');
+                                console.error('Error toggling task completion:', err);
+                                setError('Failed to toggle task completion');
                               }
                             }}
-                            ariaLabel={done ? 'Done' : 'Mark Complete'}
-                            disabled={done}
+                            ariaLabel={done ? 'Undo Complete' : 'Mark Complete'}
+                            disabled={false}
                           />
                         </div>
                       </div>

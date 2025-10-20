@@ -452,6 +452,55 @@ router.get(
   }
 );
 
+// Delete/unmark a task completion for a specific date (toggle off)
+router.delete(
+  '/:taskId/completions/:date',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const taskId = parseInt(req.params.taskId || '0');
+      const date = req.params.date;
+
+      // Verify the task belongs to the user (daily or preventative)
+      const {
+        rows: [task],
+      } = await db.query(
+        `
+          SELECT t.*, p.user_id 
+          FROM (
+            SELECT id, pet_id FROM daily_tasks WHERE id = $1
+            UNION
+            SELECT id, pet_id FROM preventatives WHERE id = $1
+          ) t 
+          JOIN pets p ON t.pet_id = p.id
+        `,
+        [taskId]
+      );
+
+      if (!task) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+
+      if (task.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to modify this task' });
+        return;
+      }
+
+      // Delete the completion for that date (idempotent)
+      await db.query(
+        'DELETE FROM task_completions WHERE task_id = $1 AND DATE(completion_date) = $2',
+        [taskId, date]
+      );
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting task completion:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 // Mark task as complete
 router.post(
   '/:taskId/complete',

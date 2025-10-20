@@ -37,6 +37,16 @@ const makeAuthenticatedRequest = async (
   return response.json();
 };
 
+export const unmarkTaskComplete = async (
+  taskId: string,
+  date: string,
+  getToken: GetTokenFn
+): Promise<void> => {
+  await makeAuthenticatedRequest(`/tasks/${taskId}/completions/${date}`, getToken, {
+    method: 'DELETE',
+  });
+};
+
 export interface Pet {
   id: number;
   name: string;
