@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import PetProfile from './pages/PetProfile';
 import Settings from './pages/Settings';
 import ServiceDogTasks from './pages/ServiceDogTasks';
+import Shots from './pages/Shots';
 import PetFiles from './pages/PetFiles';  
 
 import ClerkProtectedRoute from './components/ClerkProtectedRoute';
@@ -59,6 +60,14 @@ function App() {
             element={
               <ClerkProtectedRoute>
                 <ServiceDogTasks />
+              </ClerkProtectedRoute>
+            }
+          />
+          <Route
+            path="/pet/:petId/shots"
+            element={
+              <ClerkProtectedRoute>
+                <Shots />
               </ClerkProtectedRoute>
             }
           />

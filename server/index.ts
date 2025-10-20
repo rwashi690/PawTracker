@@ -20,6 +20,7 @@ import petsRouter from './routes/pets.js';
 import tasksRouter from './routes/tasks.js';
 import preventativesRouter from './routes/preventatives.js';
 import serviceDogTasksRouter from './routes/serviceDogTasks.js';
+import shotsRouter from './routes/shots.js';
 import { ensureAuthenticated } from './middleware/auth.js';
 
 dotenv.config();
@@ -79,6 +80,7 @@ app.use('/api/pets', petsRouter);
 app.use('/api/tasks', tasksRouter); // Adding tasks routes
 app.use('/api/preventatives', preventativesRouter); // Adding preventatives routes
 app.use('/api/service-dog-tasks', serviceDogTasksRouter); // Adding service dog tasks routes
+app.use('/api/shots', shotsRouter); // Adding immunization shots routes
 
 // Health check endpoint
 app.get('/api/health', async (req: Request, res: Response): Promise<void> => {

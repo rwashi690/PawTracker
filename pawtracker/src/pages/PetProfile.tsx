@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_URL } from '../config';
-import { Container, Row, Col, Alert, Card, Button } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Card } from 'react-bootstrap';
 import Calendar from 'react-calendar';
 import { useAuth } from '@clerk/clerk-react';
 import 'react-calendar/dist/Calendar.css';
@@ -246,6 +246,9 @@ const PetProfile: React.FC = () => {
             <Card.Body>
             <PawButton onClick={() => navigate(`/pet/${pet.id}/files`)}>
                 Files
+              </PawButton>
+              <PawButton onClick={() => navigate(`/pet/${pet.id}/shots`)}>
+                Immunizations
               </PawButton>
             {pet.is_working_dog && pet.animal_type === 'Service Animal' && (
               <PawButton onClick={() => navigate(`/pet/${pet.id}/servicetasks`)}>
