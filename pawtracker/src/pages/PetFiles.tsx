@@ -230,8 +230,10 @@ const PetFiles: React.FC = () => {
                       Uploaded {new Date(f.uploaded_at).toLocaleString()}
                     </div>
                   </div>
-                  <div className="ms-3 d-flex gap-2">
+                  <div className="ms-3 d-flex gap-2 align-items-center">
                     <PawButton
+                      size="sm"
+                      className="paw-button--text-sm"
                       onClick={() =>
                         window.open(`${API_URL}${f.file_path}`, '_blank', 'noopener,noreferrer')
                       }
@@ -240,6 +242,8 @@ const PetFiles: React.FC = () => {
                     </PawButton>
                     <PawButton
                       variant="danger"
+                      size="sm"
+                      className="paw-button--wide-sm paw-button--text-sm"
                       onClick={() => onDelete(f.id)}
                     >
                       Delete

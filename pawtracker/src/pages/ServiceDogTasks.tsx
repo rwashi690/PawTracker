@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Button, Card, Spinner, Alert, Table, Form, Modal } from 'react-bootstrap';
+import { Container, Button, Card, Spinner, Alert, Form, Modal } from 'react-bootstrap';
 import { useAuth } from '@clerk/clerk-react';
 import BackButton from '../components/BackButton';
 import { API_URL } from '../config';
 import CircularPlusButton from '../components/CircularPlusButton';
+import PawButton from '../components/PawButton';
 
 interface ServiceDogTask {
   id: number;
@@ -24,6 +25,9 @@ const ServiceDogTasks = () => {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<ServiceDogTask | null>(null);
+  const [editForm, setEditForm] = useState<{ task_name: string; notes: string | null }>({ task_name: '', notes: null });
   const [newTask, setNewTask] = useState<Omit<ServiceDogTask, 'id' | 'pet_id' | 'created_at' | 'updated_at'>>({
     task_name: '',
     notes: null
@@ -106,7 +110,7 @@ const ServiceDogTasks = () => {
         };
         if (sessionId) taskHeaders['Clerk-Session-Id'] = sessionId;
 
-        const response = await fetch(`${API_URL}/api/pet/${petId}/servicetasks`, {
+        const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks`, {
           headers: taskHeaders,
           credentials: 'include', // Important for sending cookies
         });
@@ -143,7 +147,7 @@ const ServiceDogTasks = () => {
     e.preventDefault();
     try {
       const token = await getToken();
-      const response = await fetch(`${API_URL}/api/pet/${petId}/servicetasks`, {
+      const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,6 +172,74 @@ const ServiceDogTasks = () => {
       setShowAddModal(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add service dog task');
+    }
+  };
+
+  // Open Edit modal prefilled with the selected task
+  const openEdit = (task: ServiceDogTask) => {
+    setEditingTask(task);
+    setEditForm({ task_name: task.task_name, notes: task.notes });
+    setShowEditModal(true);
+  };
+
+  // Update an existing service dog task
+  const handleUpdateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !petId) return;
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks/${editingTask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(sessionId && { 'Clerk-Session-Id': sessionId })
+        },
+        body: JSON.stringify({
+          task_name: editForm.task_name,
+          notes: editForm.notes,
+        }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update service dog task');
+      }
+
+      const updated: ServiceDogTask = await response.json();
+      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setShowEditModal(false);
+      setEditingTask(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update service dog task');
+    }
+  };
+
+  // Delete a service dog task
+  const handleDeleteTask = async (taskId: number) => {
+    if (!petId) return;
+    const confirmed = window.confirm('Delete this service dog task? This cannot be undone.');
+    if (!confirmed) return;
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_URL}/api/service-dog-tasks/pet/${petId}/servicetasks/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(sessionId && { 'Clerk-Session-Id': sessionId }),
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok && response.status !== 204) {
+        const text = await response.text();
+        throw new Error(text || 'Failed to delete service dog task');
+      }
+
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete service dog task');
     }
   };
 
@@ -243,34 +315,26 @@ const ServiceDogTasks = () => {
           {tasks.length === 0 ? (
             <Alert variant="info">No service dog tasks found for this pet.</Alert>
           ) : (
-            <Table striped bordered hover responsive>
-              <thead>
-                <tr>
-                  <th>Task Name</th>
-                  <th>Notes</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.map((task) => (
-                  <tr key={task.id}>
-                    <td>{task.task_name}</td>
-                    <td>{task.notes || '-'}</td>
-                    <td>{new Date(task.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm" 
-                        onClick={() => navigate(`/pet/${petId}/servicetasks/${task.id}`)}
-                      >
-                        View/Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+            <div>
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded"
+                >
+                  <div>
+                    <span>{task.task_name}</span>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <PawButton size="sm" onClick={() => openEdit(task)}>
+                      View/Edit
+                    </PawButton>
+                    <PawButton variant="danger" size="sm" onClick={() => handleDeleteTask(task.id)}>
+                      Delete
+                    </PawButton>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </Card.Body>
       </Card>
@@ -303,11 +367,44 @@ const ServiceDogTasks = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-              Cancel
-            </Button>
+
             <Button variant="primary" type="submit">
               Add Task
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Edit Task Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Task</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleUpdateTask}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Task Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={editForm.task_name}
+                onChange={(e) => setEditForm({ ...editForm, task_name: e.target.value })}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Notes</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={editForm.notes || ''}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value || null })}
+                placeholder="Additional details about this service task (optional)"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="primary" type="submit">
+              Save Changes
             </Button>
           </Modal.Footer>
         </Form>

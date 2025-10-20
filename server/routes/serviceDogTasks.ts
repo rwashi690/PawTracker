@@ -56,6 +56,49 @@ router.post('/pet/:petId/servicetasks', ensureAuthenticated, async (req: Request
   }
 });
 
+// Update a service dog task
+router.put('/pet/:petId/servicetasks/:taskId', ensureAuthenticated, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { petId, taskId } = req.params;
+    const userId = req.auth?.internalId;
+
+    // Verify the pet exists and is owned by the user
+    const petResult = await pool.query('SELECT * FROM pets WHERE id = $1 AND user_id = $2', [petId, userId]);
+    if (petResult.rows.length === 0) {
+      res.status(404).json({ error: 'Pet not found or access denied' });
+      return;
+    }
+
+    const { task_name, notes } = req.body as { task_name?: string; notes?: string | null };
+    if (!task_name && typeof notes === 'undefined') {
+      res.status(400).json({ error: 'Nothing to update' });
+      return;
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+    if (task_name !== undefined) { fields.push(`task_name = $${idx++}`); values.push(task_name); }
+    if (notes !== undefined) { fields.push(`notes = $${idx++}`); values.push(notes); }
+    // updated_at
+    fields.push(`updated_at = NOW()`);
+
+    values.push(taskId);
+    values.push(petId);
+
+    const query = `UPDATE service_dog_tasks SET ${fields.join(', ')} WHERE id = $${idx++} AND pet_id = $${idx} RETURNING *`;
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Task not found for this pet' });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating service dog task:', err);
+    res.status(500).json({ error: 'Failed to update service dog task' });
+  }
+});
+
 // Delete a service dog task for a specific pet
 router.delete('/pet/:petId/servicetasks/:taskId', ensureAuthenticated, async (req: Request, res: Response, next: NextFunction) => {
   try {

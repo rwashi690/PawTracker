@@ -247,10 +247,11 @@ const PetProfile: React.FC = () => {
             <PawButton onClick={() => navigate(`/pet/${pet.id}/files`)}>
                 Files
               </PawButton>
+            {pet.is_working_dog && pet.animal_type === 'Service Animal' && (
               <PawButton onClick={() => navigate(`/pet/${pet.id}/servicetasks`)}>
                 Service Dog Tasks
               </PawButton>
-              
+            )}
             </Card.Body>
           </Card>
         </Col>

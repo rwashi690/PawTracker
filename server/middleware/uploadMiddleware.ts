@@ -23,12 +23,22 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter to only allow PDFs
+// File filter to allow images (jpeg/png/webp/heic/heif) and PDFs
 const fileFilter: multer.Options['fileFilter'] = (req, file, cb) => {
-  if (file.mimetype === 'application/pdf') {
+  const allowed = new Set([
+    'image/jpeg',
+    'image/jpg',
+    'image/pjpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif',
+    'application/pdf',
+  ]);
+  if (allowed.has(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Please upload a PDF document.'));
+    cb(new Error('Invalid file type. Allowed types: JPG, PNG, WEBP, HEIC, HEIF, or PDF.'));
   }
 };
 
