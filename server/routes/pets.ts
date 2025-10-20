@@ -66,6 +66,64 @@ router.get(
   }
 );
 
+// Delete a file for a pet
+router.delete(
+  '/:id/files/:fileId',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const petId = parseInt(req.params.id || '0');
+      const fileId = parseInt(req.params.fileId || '0');
+      if (isNaN(petId) || isNaN(fileId)) {
+        res.status(400).json({ error: 'Invalid IDs' });
+        return;
+      }
+
+      // Verify pet exists and belongs to user
+      const pet = await petService.getPetById(petId);
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+      if (pet.user_id !== (req.auth?.internalId as number)) {
+        res.status(403).json({ error: 'Not authorized to delete files for this pet' });
+        return;
+      }
+
+      // Fetch the file row
+      const { rows } = await pool.query(
+        `SELECT id, pet_id, file_name, file_path FROM pet_files WHERE id = $1 AND pet_id = $2`,
+        [fileId, petId]
+      );
+      const fileRow = rows[0];
+      if (!fileRow) {
+        res.status(404).json({ error: 'File not found' });
+        return;
+      }
+
+      // Delete the file from disk if it exists
+      if (fileRow.file_path) {
+        // file_path is like '/uploads/pets/<filename>'
+        const absolutePath = path.join(__dirname, '..', fileRow.file_path);
+        if (fs.existsSync(absolutePath)) {
+          try {
+            fs.unlinkSync(absolutePath);
+          } catch (e) {
+            console.warn('Warning: failed to delete file from disk:', absolutePath, e);
+          }
+        }
+      }
+
+      // Delete DB row
+      await pool.query(`DELETE FROM pet_files WHERE id = $1 AND pet_id = $2`, [fileId, petId]);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting pet file:', error);
+      res.status(500).json({ error: 'Failed to delete pet file' });
+    }
+  }
+);
+
 // Get all pets for the authenticated user
 router.get(
   '/',

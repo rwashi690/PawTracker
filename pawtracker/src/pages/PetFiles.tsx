@@ -1,9 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Button, Alert, Form, ListGroup, Spinner } from 'react-bootstrap';
+import { Container, Card, Alert, Form, ListGroup, Spinner } from 'react-bootstrap';
 import { useAuth } from '@clerk/clerk-react';
 import { API_URL } from '../config';
 import BackButton from '../components/BackButton';
+import PawButton from '../components/PawButton';
 
 type PetFile = {
   id: number;
@@ -55,6 +56,34 @@ const PetFiles: React.FC = () => {
       setLoading(false);
     }
   }, [id, getToken, sessionId]);
+
+  const onDelete = async (fileId: number) => {
+    if (!id) return;
+    const confirmed = window.confirm('Delete this file? This cannot be undone.');
+    if (!confirmed) return;
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+      };
+      if (sessionId) headers['Clerk-Session-Id'] = sessionId;
+
+      const resp = await fetch(`${API_URL}/api/pets/${id}/files/${fileId}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include',
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || 'Failed to delete file');
+      }
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+    } catch (e: any) {
+      setError(e?.message || 'Failed to delete file');
+    }
+  };
+  
 
   React.useEffect(() => {
     void fetchFiles();
@@ -147,7 +176,7 @@ const PetFiles: React.FC = () => {
               <Form.Text muted>Maximum size: 5MB</Form.Text>
             </Form.Group>
             <div className="mt-2 mt-md-4">
-              <Button
+              <PawButton
                 type="submit"
                 variant="primary"
                 disabled={!selectedFile || uploading}
@@ -165,7 +194,7 @@ const PetFiles: React.FC = () => {
                 ) : (
                   'Upload'
                 )}
-              </Button>
+              </PawButton>
             </div>
           </Form>
         </Card.Body>
@@ -201,17 +230,20 @@ const PetFiles: React.FC = () => {
                       Uploaded {new Date(f.uploaded_at).toLocaleString()}
                     </div>
                   </div>
-                  <div className="ms-3">
-                    <Button
-                      as="a"
-                      href={`${API_URL}${f.file_path}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="outline-primary"
-                      size="sm"
+                  <div className="ms-3 d-flex gap-2">
+                    <PawButton
+                      onClick={() =>
+                        window.open(`${API_URL}${f.file_path}`, '_blank', 'noopener,noreferrer')
+                      }
                     >
                       Open
-                    </Button>
+                    </PawButton>
+                    <PawButton
+                      variant="danger"
+                      onClick={() => onDelete(f.id)}
+                    >
+                      Delete
+                    </PawButton>
                   </div>
                 </ListGroup.Item>
               ))}

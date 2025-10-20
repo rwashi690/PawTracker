@@ -64,35 +64,34 @@ export const ensureAuthenticated = (
         return;
       }
 
-      console.log('✅ Auth successful:', {
-        userId: req.auth?.userId,
-        sessionId: req.auth?.sessionId,
-        claims: req.auth?.claims,
+      console.log(' Auth successful:', {
+        userId: (req as any).auth?.userId,
+        sessionId: (req as any).auth?.sessionId,
+        claims: (req as any).auth?.claims,
       });
 
-      if (!req.auth?.userId) {
-        console.error('❌ No user ID in request after successful auth');
+      if (!(req as any).auth?.userId) {
+        console.error(' No user ID in request after successful auth');
         res.status(401).json({ error: 'User ID not found' });
         return;
       }
 
-      // Add user ID to request for downstream use
-      req.auth = { ...req.auth, userId: req.auth.userId };
-      console.log('✅ User ID set:', req.auth.userId);
+      const clerkUserId: string = (req as any).auth.userId as string;
+      console.log(' User ID set:', clerkUserId);
 
       // Get internal user ID from clerk_id
       try {
-        if (!req.auth?.userId) {
+        if (!clerkUserId) {
           throw new Error('No user ID in request');
         }
 
         const userQuery = 'SELECT id FROM users WHERE clerk_id = $1';
-        console.log('Looking up user:', { clerkId: req.auth.userId });
-        const userResult = await pool.query(userQuery, [req.auth.userId]);
+        console.log('Looking up user:', { clerkId: clerkUserId });
+        const userResult = await pool.query(userQuery, [clerkUserId]);
         console.log('User lookup result:', userResult.rows);
 
         if (!userResult.rows[0]) {
-          const clerkUser = await clerkClient.users.getUser(req.auth.userId);
+          const clerkUser = await clerkClient.users.getUser(clerkUserId);
           const email = clerkUser.emailAddresses[0]?.emailAddress;
           if (!email) {
             throw new Error('User has no email address');
@@ -104,20 +103,20 @@ export const ensureAuthenticated = (
             RETURNING id
           `;
           const insertResult = await pool.query(insertQuery, [
-            req.auth.userId,
+            clerkUserId,
             email,
             clerkUser.firstName || null,
             clerkUser.lastName || null
           ]);
 
-          req.auth.internalId = insertResult.rows[0].id;
-          console.log('Created new user with ID:', req.auth.internalId);
+          req.auth!.internalId = insertResult.rows[0].id;
+          console.log('Created new user with ID:', req.auth!.internalId);
         } else {
-          req.auth.internalId = userResult.rows[0].id;
-          console.log('Found existing user with ID:', req.auth.internalId);
+          req.auth!.internalId = userResult.rows[0].id;
+          console.log('Found existing user with ID:', req.auth!.internalId);
         }
 
-        console.log('Set internal user ID:', req.auth.internalId);
+        console.log('Set internal user ID:', req.auth!.internalId);
         next();
       } catch (error) {
         console.error('❌ Error getting/creating user:', error);

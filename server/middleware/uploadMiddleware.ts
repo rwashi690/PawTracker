@@ -24,11 +24,7 @@ const storage = multer.diskStorage({
 });
 
 // File filter to only allow PDFs
-const fileFilter = (
-  req: Express.Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
-) => {
+const fileFilter: multer.Options['fileFilter'] = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
