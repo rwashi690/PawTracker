@@ -5,7 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  REACT_APP_API_URL = "https://pawtracker.fly.dev"
+  REACT_APP_API_URL = "https://ptserver--paw-tracker--ppnkpj8jlrbn.code.run"
 
 [[redirects]]
   from = "/*"
