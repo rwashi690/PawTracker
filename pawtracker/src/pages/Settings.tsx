@@ -111,9 +111,9 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteTask = async (taskId: number) => {
+  const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteDailyTask(taskId.toString(), getToken);
+      await deleteDailyTask(taskId, getToken);
       setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (err: any) {
       setError(err.message || 'Failed to delete task');

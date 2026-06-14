@@ -6,6 +6,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './styles/App.css';
 
 import FrontPage from './pages/FrontPage';
+import { SignIn } from '@clerk/clerk-react';
 import Dashboard from './pages/Dashboard';
 import PetProfile from './pages/PetProfile';
 import Settings from './pages/Settings';
@@ -29,8 +30,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<FrontPage />} />
-          <Route path="/sign-in/*" element={<FrontPage />} />
-          <Route path="/sign-up/*" element={<FrontPage />} />
+          <Route
+            path="/sign-in/*"
+            element={<SignIn routing="path" path="/sign-in" afterSignInUrl="/dashboard" />}
+          />
           <Route
             path="/dashboard"
             element={
@@ -72,13 +75,13 @@ function App() {
             }
           />
           <Route
-  path="/pet/:id/files"
-  element={
-    <ClerkProtectedRoute>
-      <PetFiles />
-    </ClerkProtectedRoute>
-  }
-/>
+            path="/pet/:id/files"
+            element={
+              <ClerkProtectedRoute>
+                <PetFiles />
+              </ClerkProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </ClerkProvider>

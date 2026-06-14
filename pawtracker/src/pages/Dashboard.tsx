@@ -116,7 +116,7 @@ const Dashboard = () => {
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Welcome, {user.firstName}! 🐾</h1>
+        <h1>Welcome {user.firstName}! 🐾</h1>
         <UserButton />
       </div>
       {error && (

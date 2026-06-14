@@ -77,7 +77,7 @@ const MonthlyPreventatives: React.FC<MonthlyPreventativesProps> = ({ petId }) =>
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this preventative?')) return;
     try {
       await makeAuthenticatedRequest(
