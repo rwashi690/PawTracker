@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SignInButton, SignUpButton, useUser } from '@clerk/clerk-react';
+import { useUser, SignInButton } from '@clerk/clerk-react';
 import { Container } from 'react-bootstrap';
 import PawButton from '../components/PawButton';
 import '../styles/FrontPage.css';
@@ -8,6 +8,8 @@ import '../styles/FrontPage.css';
 const FrontPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSignedIn } = useUser();
+
+  // Modal sign-in handled by <SignInButton mode="modal">; no handler needed
 
   React.useEffect(() => {
     if (isSignedIn) {
@@ -22,20 +24,15 @@ const FrontPage: React.FC = () => {
     >
       <div className="content-container">
         <h1>Welcome to PawTracker!</h1>
-        <p>Keep track of your pets' information in one place</p>
+        <p>Keep track of your pets information in one place</p>
         <div className="button-container">
           {!isSignedIn ? (
             <>
               <SignInButton mode="modal">
                 <PawButton>
-                  Sign In
+                  Continue with Google or Apple
                 </PawButton>
               </SignInButton>
-              <SignUpButton mode="modal">
-                <PawButton>
-                  Create Account
-                </PawButton>
-              </SignUpButton>
             </>
           ) : (
             <PawButton

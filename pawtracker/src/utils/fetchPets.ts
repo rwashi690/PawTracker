@@ -37,6 +37,16 @@ const makeAuthenticatedRequest = async (
   return response.json();
 };
 
+export const unmarkTaskComplete = async (
+  taskId: string,
+  date: string,
+  getToken: GetTokenFn
+): Promise<void> => {
+  await makeAuthenticatedRequest(`/tasks/${taskId}/completions/${date}`, getToken, {
+    method: 'DELETE',
+  });
+};
+
 export interface Pet {
   id: number;
   name: string;
@@ -53,7 +63,7 @@ export interface Pet {
 
 export interface DailyTask {
   task_type: 'daily' | 'preventative';
-  id: number;
+  id: string;
   pet_id: number;
   task_name: string;
   created_at: string;
@@ -62,20 +72,20 @@ export interface DailyTask {
 
 export interface TaskCompletion {
   id: number;
-  task_id: number;
+  task_id: string;
   completion_date: string;
   completed_at: string;
 }
 
 export interface PreventativeCompletion {
   id: number;
-  preventative_id: number;
+  preventative_id: string;
   completion_date: string;
   completed_at: string;
 }
 
 export interface Task {
-  id: number;
+  id: string;
   task_name: string;
   task_type: 'daily' | 'preventative';
   due_day?: number;
@@ -121,7 +131,18 @@ export async function fetchDailyTasks(
     date: date?.toLocaleString(),
     dateISO: date?.toISOString()
   });
-  const dateParam = date ? `?date=${date.toISOString()}` : '';
+  // Use local noon to avoid UTC conversion shifting the calendar day
+  const dateParam = date
+    ? (() => {
+        const atLocalNoon = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          12, 0, 0, 0
+        );
+        return `?date=${atLocalNoon.toISOString()}`;
+      })()
+    : '';
   const endpoint = `/tasks/pet/${petId}${dateParam}`;
   console.log('📡 Making API request to:', `${BASE_URL}${endpoint}`);
   console.log('🔑 Using auth token:', await getToken());
@@ -171,7 +192,7 @@ export async function fetchMonthlyPreventatives(petId: string, getToken: () => P
   return resp.json(); // array of { id, name, notes, action_date }
 }
 
-export async function markPreventativeComplete(prevId: number, date: string, getToken: () => Promise<string>): Promise<PreventativeCompletion> {
+export async function markPreventativeComplete(prevId: string, date: string, getToken: () => Promise<string>): Promise<PreventativeCompletion> {
   const token = await getToken();
   const resp = await fetch(`${BASE_URL}/preventatives/${prevId}/complete`, {
     method: 'POST',
@@ -184,10 +205,47 @@ export async function markPreventativeComplete(prevId: number, date: string, get
   return resp.json(); // the completion record or null
 }
 
-export async function fetchPreventativeCompletion(prevId: number, date: string, getToken: () => Promise<string>) {
+export async function fetchPreventativeCompletion(prevId: string, date: string, getToken: () => Promise<string>) {
   const token = await getToken();
   const resp = await fetch(`${BASE_URL}/preventatives/${prevId}/completions/${date}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return resp.json(); // completion record or null
 }
+
+export interface ServiceDogTask {
+  id: number;
+  pet_id: number;
+  task_name: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const fetchServiceDogTasks = async (
+  petId: string,
+  getToken: GetTokenFn
+): Promise<ServiceDogTask[]> => {
+  return makeAuthenticatedRequest(`/service-dog-tasks/pet/${petId}`, getToken);
+};
+
+export const createServiceDogTask = async (
+  petId: string,
+  taskName: string,
+  notes: string = '',
+  getToken: GetTokenFn
+): Promise<ServiceDogTask> => {
+  return makeAuthenticatedRequest(`/service-dog-tasks/pet/${petId}/tasks`, getToken, {
+    method: 'POST',
+    body: JSON.stringify({ task_name: taskName, notes }),
+  });
+};
+
+export const deleteServiceDogTask = async (
+  taskId: string,
+  getToken: GetTokenFn
+): Promise<void> => {
+  await makeAuthenticatedRequest(`/service-dog-tasks/${taskId}`, getToken, {
+    method: 'DELETE',
+  });
+};

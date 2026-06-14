@@ -19,6 +19,8 @@ import { pool } from './db/db.js';
 import petsRouter from './routes/pets.js';
 import tasksRouter from './routes/tasks.js';
 import preventativesRouter from './routes/preventatives.js';
+import serviceDogTasksRouter from './routes/serviceDogTasks.js';
+import shotsRouter from './routes/shots.js';
 import { ensureAuthenticated } from './middleware/auth.js';
 
 dotenv.config();
@@ -56,12 +58,7 @@ app.get('/health', (req: Request, res: Response) => {
 // Serve static files from uploads directory
 const uploadsPath = path.join(process.cwd(), 'uploads');
 console.log('Serving uploads from:', uploadsPath);
-app.use('/uploads', express.static(uploadsPath, {
-  setHeaders: (res, filePath) => {
-    console.log('Serving file:', filePath);
-    res.setHeader('Content-Type', 'image/jpeg');
-  }
-}));
+app.use('/uploads', express.static(uploadsPath));
 
 // Log middleware to debug image requests
 app.use('/uploads', (req, res, next) => {
@@ -82,6 +79,8 @@ app.get('/api/test', (req: Request, res: Response) => {
 app.use('/api/pets', petsRouter);
 app.use('/api/tasks', tasksRouter); // Adding tasks routes
 app.use('/api/preventatives', preventativesRouter); // Adding preventatives routes
+app.use('/api/service-dog-tasks', serviceDogTasksRouter); // Adding service dog tasks routes
+app.use('/api/shots', shotsRouter); // Adding immunization shots routes
 
 // Health check endpoint
 app.get('/api/health', async (req: Request, res: Response): Promise<void> => {

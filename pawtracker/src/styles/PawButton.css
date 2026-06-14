@@ -1,10 +1,36 @@
 .paw-button {
-  padding: 0.5rem 1.5rem;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center; /* ensure alignment inside parent flex containers */
+  vertical-align: middle; /* ensure baseline alignment when inline */
   font-weight: 500;
   transition: all 0.2s ease-in-out;
   color: #000000;
-  border: none;
-  background: none;
+  /* Let Bootstrap control padding via size classes; set sensible default */
+  padding: 0.375rem 0.75rem; /* matches .btn default */
+  line-height: 1;
+  border-radius: 0.375rem; /* matches .btn border radius */
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+}
+
+/* Respect Bootstrap size modifiers on our custom class */
+.paw-button.btn-sm {
+  height: 32px; /* enforce equal small button height */
+  padding: 0 0.5rem; /* vertical space defined by height; keep horizontal padding */
+  font-size: 0.875rem;
+  line-height: 1; /* avoid extra vertical space differences between variants */
+  border-radius: 0.25rem;
+}
+
+.paw-button.btn-lg {
+  padding: 0.5rem 1rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  border-radius: 0.5rem;
 }
 
 .paw-button.circular {
@@ -15,6 +41,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Utility: make small buttons wider while keeping same height */
+.paw-button--wide-sm.paw-button.btn-sm {
+  min-width: 96px; /* tweak as desired for visual balance */
+}
+
+/* Utility: normalize text size across buttons */
+.paw-button--text-sm {
+  font-size: 0.9rem !important;
+  line-height: 1 !important;
 }
 
 .paw-button.btn-primary {

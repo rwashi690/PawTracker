@@ -232,21 +232,22 @@ router.delete(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
 
       // First verify the task's pet belongs to the user
-      // Check if it's a daily task or preventative task based on ID
+      // Determine type by prefix
       let task;
-      
-      if (taskId >= 90001) {
-        // This is a preventative task
+      if (taskId.startsWith('p_')) {
         const { rows } = await db.query(
           'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
           [taskId]
         );
         task = rows[0];
       } else {
-        // This is a daily task
         const { rows } = await db.query(
           'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
           [taskId]
@@ -255,7 +256,7 @@ router.delete(
       }
 
       if (!task) {
-        res.status(404).json({ error: 'Task not found' });
+        res.json(null);
         return;
       }
 
@@ -264,7 +265,11 @@ router.delete(
         return;
       }
 
-      await db.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+      if (taskId.startsWith('p_')) {
+        await db.query('DELETE FROM preventatives WHERE id = $1', [taskId]);
+      } else {
+        await db.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+      }
       res.status(204).send();
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -274,13 +279,18 @@ router.delete(
 );
 
 // Mark task as complete
-router.post(
+router.post(  
   '/tasks/:taskId/complete',
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
       const { completion_date } = req.body;
+
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
 
       if (!completion_date) {
         res.status(400).json({ error: 'Completion date is required' });
@@ -288,18 +298,15 @@ router.post(
       }
 
       // First verify the task's pet belongs to the user
-      // Check if it's a daily task or preventative task based on ID
+      // Determine task type by prefix
       let task;
-      
-      if (taskId >= 90001) {
-        // This is a preventative task
+      if (taskId.startsWith('p_')) {
         const { rows } = await db.query(
           'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
           [taskId]
         );
         task = rows[0];
       } else {
-        // This is a daily task
         const { rows } = await db.query(
           'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
           [taskId]
@@ -308,7 +315,7 @@ router.post(
       }
 
       if (!task) {
-        res.status(404).json({ error: 'Task not found' });
+        res.json(null);
         return;
       }
 
@@ -327,7 +334,7 @@ router.post(
       
       if (tasksCheck.length === 0) {
         // Task doesn't exist in the tasks table, add it
-        const taskType = taskId >= 90001 ? 'preventative' : 'daily';
+        const taskType = taskId.startsWith('p_') ? 'preventative' : 'daily';
         await db.query(
           'INSERT INTO tasks (id, task_type) VALUES ($1, $2)',
           [taskId, taskType]
@@ -355,22 +362,24 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
       const date = req.params.date;
 
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
+
       // First verify the task's pet belongs to the user
-      // Check if it's a daily task or preventative task based on ID
+      // Determine type by prefix
       let task;
-      
-      if (taskId >= 90001) {
-        // This is a preventative task
+      if (taskId.startsWith('p_')) {
         const { rows } = await db.query(
           'SELECT prev.id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
           [taskId]
         );
         task = rows[0];
       } else {
-        // This is a daily task
         const { rows } = await db.query(
           'SELECT dt.id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
           [taskId]
@@ -379,7 +388,8 @@ router.get(
       }
 
       if (!task) {
-        res.status(404).json({ error: 'Task not found' });
+        // Return null (not an error) when the task is missing so the UI treats it as not completed
+        res.json(null);
         return;
       }
 
@@ -408,27 +418,32 @@ router.get(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
       const date = req.params.date;
 
-      // First verify the task belongs to the user
-      const {
-        rows: [task],
-      } = await db.query(
-        `
-          SELECT t.*, p.user_id 
-          FROM (
-            SELECT id, pet_id FROM daily_tasks WHERE id = $1
-            UNION
-            SELECT id, pet_id FROM preventatives WHERE id = $1
-          ) t 
-          JOIN pets p ON t.pet_id = p.id
-        `,
-        [taskId]
-      );
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
+
+      // First verify the task belongs to the user (prefix-based lookup)
+      let task;
+      if (taskId.startsWith('p_')) {
+        const { rows } = await db.query(
+          'SELECT prev.id, prev.pet_id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        const { rows } = await db.query(
+          'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
 
       if (!task) {
-        res.status(404).json({ error: 'Task not found' });
+        res.json(null);
         return;
       }
 
@@ -452,30 +467,89 @@ router.get(
   }
 );
 
+// Delete/unmark a task completion for a specific date (toggle off)
+router.delete(
+  '/:taskId/completions/:date',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const taskId = req.params.taskId;
+      const date = req.params.date;
+
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
+
+      // Verify the task belongs to the user (prefix-based lookup)
+      let task;
+      if (taskId.startsWith('p_')) {
+        const { rows } = await db.query(
+          'SELECT prev.id, prev.pet_id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        const { rows } = await db.query(
+          'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
+
+      if (!task) {
+        res.status(404).json({ error: 'Task not found' });
+        return;
+      }
+
+      if (task.user_id !== req.auth?.internalId) {
+        res.status(403).json({ error: 'Not authorized to modify this task' });
+        return;
+      }
+
+      // Delete the completion for that date (idempotent)
+      await db.query(
+        'DELETE FROM task_completions WHERE task_id = $1 AND DATE(completion_date) = $2',
+        [taskId, date]
+      );
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting task completion:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 // Mark task as complete
 router.post(
   '/:taskId/complete',
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
       const { completion_date } = req.body;
 
-      // First verify the task belongs to the user
-      const {
-        rows: [task],
-      } = await db.query(
-        `
-          SELECT t.*, p.user_id 
-          FROM (
-            SELECT id, pet_id FROM daily_tasks WHERE id = $1
-            UNION
-            SELECT id, pet_id FROM preventatives WHERE id = $1
-          ) t 
-          JOIN pets p ON t.pet_id = p.id
-        `,
-        [taskId]
-      );
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
+
+      // First verify the task belongs to the user (prefix-based lookup)
+      let task;
+      if (taskId.startsWith('p_')) {
+        const { rows } = await db.query(
+          'SELECT prev.id, prev.pet_id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      } else {
+        const { rows } = await db.query(
+          'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+          [taskId]
+        );
+        task = rows[0];
+      }
 
       if (!task) {
         res.status(404).json({ error: 'Task not found' });
@@ -507,13 +581,20 @@ router.delete(
   ensureAuthenticated,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const taskId = parseInt(req.params.taskId || '0');
+      const taskId = req.params.taskId;
+
+      if (!taskId) {
+        res.status(400).json({ error: 'taskId is required' });
+        return;
+      }
 
       // First verify the task belongs to the user's pet
       const {
         rows: [task],
       } = await db.query(
-        'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
+        taskId.startsWith('p_')
+          ? 'SELECT prev.id, prev.pet_id, p.user_id FROM preventatives prev JOIN pets p ON prev.pet_id = p.id WHERE prev.id = $1'
+          : 'SELECT dt.id, dt.pet_id, p.user_id FROM daily_tasks dt JOIN pets p ON dt.pet_id = p.id WHERE dt.id = $1',
         [taskId]
       );
 
@@ -528,7 +609,11 @@ router.delete(
       }
 
       // Delete the task
-      await db.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+      if (taskId.startsWith('p_')) {
+        await db.query('DELETE FROM preventatives WHERE id = $1', [taskId]);
+      } else {
+        await db.query('DELETE FROM daily_tasks WHERE id = $1', [taskId]);
+      }
 
       res.status(200).json({ message: 'Task deleted successfully' });
     } catch (error) {

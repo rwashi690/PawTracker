@@ -33,8 +33,8 @@ router.get(
         return;
       }
 
-      if (!req.auth?.userId) {
-        res.status(401).json({ error: 'User ID not found in request' });
+      if (typeof req.auth?.internalId !== 'number') {
+        res.status(401).json({ error: 'User not authenticated' });
         return;
       }
 
@@ -47,9 +47,12 @@ router.get(
       }
 
       // Verify the pet belongs to the authenticated user
-      if (pet.user_id !== req.auth.internalId) {
+      {
+        const internalId = req.auth.internalId;
+        if (pet.user_id !== internalId) {
         res.status(403).json({ error: 'Not authorized to view this pet' });
         return;
+        }
       }
 
       res.json(pet);
@@ -63,6 +66,64 @@ router.get(
   }
 );
 
+// Delete a file for a pet
+router.delete(
+  '/:id/files/:fileId',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const petId = parseInt(req.params.id || '0');
+      const fileId = parseInt(req.params.fileId || '0');
+      if (isNaN(petId) || isNaN(fileId)) {
+        res.status(400).json({ error: 'Invalid IDs' });
+        return;
+      }
+
+      // Verify pet exists and belongs to user
+      const pet = await petService.getPetById(petId);
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+      if (pet.user_id !== (req.auth?.internalId as number)) {
+        res.status(403).json({ error: 'Not authorized to delete files for this pet' });
+        return;
+      }
+
+      // Fetch the file row
+      const { rows } = await pool.query(
+        `SELECT id, pet_id, file_name, file_path FROM pet_files WHERE id = $1 AND pet_id = $2`,
+        [fileId, petId]
+      );
+      const fileRow = rows[0];
+      if (!fileRow) {
+        res.status(404).json({ error: 'File not found' });
+        return;
+      }
+
+      // Delete the file from disk if it exists
+      if (fileRow.file_path) {
+        // file_path is like '/uploads/pets/<filename>'
+        const absolutePath = path.join(__dirname, '..', fileRow.file_path);
+        if (fs.existsSync(absolutePath)) {
+          try {
+            fs.unlinkSync(absolutePath);
+          } catch (e) {
+            console.warn('Warning: failed to delete file from disk:', absolutePath, e);
+          }
+        }
+      }
+
+      // Delete DB row
+      await pool.query(`DELETE FROM pet_files WHERE id = $1 AND pet_id = $2`, [fileId, petId]);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting pet file:', error);
+      res.status(500).json({ error: 'Failed to delete pet file' });
+    }
+  }
+);
+
 // Get all pets for the authenticated user
 router.get(
   '/',
@@ -70,18 +131,18 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     try {
       console.log('GET /pets - Auth info:', {
-        userId: req.auth?.userId,
+        internalId: req.auth?.internalId,
         headers: req.headers,
         auth: req.auth,
       });
 
-      if (!req.auth?.internalId) {
+      if (typeof req.auth?.internalId !== 'number') {
         res.status(401).json({ error: 'Not authenticated' });
         return;
       }
 
-      console.log('Fetching pets for user:', { clerkId: req.auth.userId, internalId: req.auth.internalId });
-      const pets = await petService.getPetsByUserId(req.auth.internalId);
+      console.log('Fetching pets for user:', { internalId: req.auth.internalId });
+      const pets = await petService.getPetsByUserId(req.auth.internalId as number);
       console.log('Found pets:', pets);
       res.json(pets);
     } catch (error) {
@@ -104,7 +165,7 @@ router.post(
       console.log('POST /pets - Request:', {
         body: req.body,
         file: req.file,
-        userId: req.auth?.userId,
+        internalId: req.auth?.internalId,
       });
 
       if (!req.auth?.internalId) {
@@ -127,7 +188,7 @@ router.post(
         breed,
         birthdate,
         image_url,
-        user_id: req.auth.userId,
+        user_id: req.auth.internalId,
       });
 
       const pet = await petService.createPet({
@@ -135,7 +196,7 @@ router.post(
         breed,
         birthdate: birthdate ? new Date(birthdate) : null,
         image_url,
-        user_id: req.auth.internalId,
+        user_id: req.auth.internalId as number,
       });
 
       console.log('Pet created successfully:', pet);
@@ -191,7 +252,7 @@ router.put(
         return;
       }
 
-      if (pet.user_id !== req.auth?.internalId) {
+      if (pet.user_id !== (req.auth?.internalId as number)) {
         res.status(403).json({ error: 'Not authorized to update this pet' });
         return;
       }
@@ -260,7 +321,7 @@ router.delete(
         return;
       }
 
-      if (pet.user_id !== req.auth?.internalId) {
+      if (pet.user_id !== (req.auth?.internalId as number)) {
         res.status(403).json({ error: 'Not authorized to delete this pet' });
         return;
       }
@@ -289,7 +350,6 @@ router.get(
   async (req: Request, res: Response): Promise<void> => {
     console.log('Getting tasks for pet:', {
       petId: req.params.id,
-      userId: req.auth?.userId,
       internalId: req.auth?.internalId
     });
     try {
@@ -304,7 +364,7 @@ router.get(
       }
 
       console.log('Checking authorization:', { petUserId: pet.user_id, internalId: req.auth?.internalId });
-      if (pet.user_id !== req.auth?.internalId) {
+      if (pet.user_id !== (req.auth?.internalId as number)) {
         res.status(403).json({ error: 'Not authorized to view this pet\'s tasks' });
         return;
       }
@@ -338,7 +398,7 @@ router.post(
         return;
       }
 
-      if (pet.user_id !== req.auth?.internalId) {
+      if (pet.user_id !== (req.auth?.internalId as number)) {
         res.status(403).json({ error: 'Not authorized to add tasks to this pet' });
         return;
       }
@@ -359,6 +419,89 @@ router.post(
     } catch (error) {
       console.error('Error creating pet task:', error);
       res.status(500).json({ error: 'Failed to create pet task' });
+    }
+  }
+);
+
+// List files for a pet
+router.get(
+  '/:id/files',
+  ensureAuthenticated,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const petId = parseInt(req.params.id || '0');
+      if (isNaN(petId)) {
+        res.status(400).json({ error: 'Invalid pet ID' });
+        return;
+      }
+
+      const pet = await petService.getPetById(petId);
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      if (pet.user_id !== (req.auth?.internalId as number)) {
+        res.status(403).json({ error: 'Not authorized to view this pet\'s files' });
+        return;
+      }
+
+      const result = await pool.query(
+        `SELECT id, pet_id, file_name, file_path, file_type, uploaded_at
+         FROM pet_files
+         WHERE pet_id = $1
+         ORDER BY uploaded_at DESC`,
+        [petId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error getting pet files:', error);
+      res.status(500).json({ error: 'Failed to get pet files' });
+    }
+  }
+);
+
+// Upload a file for a pet
+router.post(
+  '/:id/files',
+  ensureAuthenticated,
+  upload.single('file'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const petId = parseInt(req.params.id || '0');
+      if (isNaN(petId)) {
+        res.status(400).json({ error: 'Invalid pet ID' });
+        return;
+      }
+
+      const pet = await petService.getPetById(petId);
+      if (!pet) {
+        res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      if (pet.user_id !== (req.auth?.internalId as number)) {
+        res.status(403).json({ error: 'Not authorized to add files to this pet' });
+        return;
+      }
+
+      if (!req.file) {
+        res.status(400).json({ error: 'No file uploaded' });
+        return;
+      }
+
+      const storedPath = `/uploads/pets/${req.file.filename}`;
+      const result = await pool.query(
+        `INSERT INTO pet_files (pet_id, file_name, file_path, file_type)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, pet_id, file_name, file_path, file_type, uploaded_at`,
+        [petId, req.file.originalname, storedPath, req.file.mimetype]
+      );
+
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error uploading pet file:', error);
+      res.status(500).json({ error: 'Failed to upload pet file' });
     }
   }
 );

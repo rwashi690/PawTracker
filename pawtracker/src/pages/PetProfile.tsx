@@ -13,18 +13,21 @@ import {
   fetchPet,
   fetchDailyTasks,
   markTaskComplete,
+  unmarkTaskComplete,
 
   type Pet,
   type Task,
   type TaskCompletion
 } from '../utils/fetchPets';
+import PawButton from '../components/PawButton';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 const PERIWINKLE = '#CCCCFF';
 
 const PetProfile: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getToken } = useAuth();
+  const { getToken, sessionId } = useAuth();
 
   const [pet, setPet] = React.useState<Pet | null>(null);
   const [tasks, setTasks] = React.useState<Task[]>([]);
@@ -36,6 +39,55 @@ const PetProfile: React.FC = () => {
   });
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+
+  // Maintain a user-defined order for tasks (persisted per pet via localStorage)
+  const [orderedTasks, setOrderedTasks] = React.useState<Task[]>([]);
+
+  // Load and apply saved order whenever tasks or pet id changes
+  React.useEffect(() => {
+    if (!id) {
+      setOrderedTasks(tasks);
+      return;
+    }
+    const key = `taskOrder:${id}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const savedOrder: string[] = JSON.parse(saved);
+        const idToTask = new Map(tasks.map(t => [t.id, t] as const));
+        const inSavedOrder = savedOrder
+          .map(taskId => idToTask.get(taskId))
+          .filter((t): t is Task => Boolean(t));
+        const remaining = tasks.filter(t => !savedOrder.includes(t.id));
+        setOrderedTasks([...inSavedOrder, ...remaining]);
+      } else {
+        setOrderedTasks(tasks);
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved task order, using default order.', e);
+      setOrderedTasks(tasks);
+    }
+  }, [tasks, id]);
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const updated = Array.from(orderedTasks);
+    const [moved] = updated.splice(result.source.index, 1);
+    updated.splice(result.destination.index, 0, moved);
+    setOrderedTasks(updated);
+    if (id) {
+      const key = `taskOrder:${id}`;
+      localStorage.setItem(key, JSON.stringify(updated.map(t => t.id)));
+    }
+  };
+
+  // Ensure we use local date (YYYY-MM-DD) to avoid timezone off-by-one
+  const formatDateLocal = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
 
   React.useEffect(() => {
     if (!id) return;
@@ -62,7 +114,7 @@ const PetProfile: React.FC = () => {
     const fetchCompletions = async () => {
       if (!tasks.length) return;
       try {
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        const dateStr = formatDateLocal(selectedDate);
         const token = await getToken();
         if (!token) return;
         const completions = await Promise.all(
@@ -73,6 +125,7 @@ const PetProfile: React.FC = () => {
                 headers: {
                   Authorization: `Bearer ${token}`,
                   'Content-Type': 'application/json',
+                  ...(sessionId ? { 'Clerk-Session-Id': sessionId } : {}),
                 },
                 credentials: 'include',
               }
@@ -88,7 +141,7 @@ const PetProfile: React.FC = () => {
       }
     };
     fetchCompletions();
-  }, [tasks, selectedDate, getToken]);
+  }, [tasks, selectedDate, getToken, sessionId]);
 
   if (loading || !pet) {
     return (
@@ -119,17 +172,33 @@ const PetProfile: React.FC = () => {
 
       {/* Centered Pet Image */}
       <div className="text-center mb-4">
-        <img
-          src={`${API_URL}${pet.image_url}`}
-          alt={pet.name}
-          className="rounded-circle"
-          style={{
-            width: '150px',
-            height: '150px',
-            objectFit: 'cover',
-            border: `4px solid ${PERIWINKLE}`
-          }}
-        />
+        {pet.image_url ? (
+          <img
+            src={pet.image_url.startsWith('http') ? pet.image_url : `${API_URL}${pet.image_url}`}
+            alt={pet.name}
+            className="rounded-circle"
+            style={{
+              width: '150px',
+              height: '150px',
+              objectFit: 'cover',
+              border: `4px solid ${PERIWINKLE}`
+            }}
+          />
+        ) : (
+          <div
+            className="rounded-circle d-flex align-items-center justify-content-center mx-auto"
+            style={{
+              width: '150px',
+              height: '150px',
+              backgroundColor: '#f0f0f0',
+              color: '#666',
+              fontSize: '48px',
+              border: `4px solid ${PERIWINKLE}`
+            }}
+          >
+            {pet.name?.charAt(0).toUpperCase() || '?'}
+          </div>
+        )}
       </div>
 
       <Row>
@@ -149,44 +218,73 @@ const PetProfile: React.FC = () => {
                 <p className="text-muted">No tasks added yet. Add tasks in settings.</p>
               ) : (
                 (() => {
-                  const dateStr = selectedDate.toISOString().split('T')[0];
-                  return tasks.map(task => {
-                    // Preventative IDs are 90001 and above
-                    const isPreventative = task.id >= 90001;
-                    const done = completedTasks.some(c => c.task_id === task.id);
-                    return (
-                      <div
-                        key={task.id}
-                        className={`d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${isPreventative ? 'bg-warning bg-opacity-10 border-warning' : ''}`}
-                      >
-                        <div>
-                          <span className={done ? 'text-muted text-decoration-line-through' : ''}>
-                            {task.task_name}
-                          </span>
-                          {isPreventative && (
-                            <span className="ms-2 badge bg-warning text-dark">Preventative</span>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0">
-                          <CircularCheckButton
-                            onClick={async () => {
-                              try {
-                                const completion = await markTaskComplete(task.id.toString(), dateStr, getToken);
-                                if (completion) {
-                                  setCompletedTasks(prev => [...prev, completion]);
-                                }
-                              } catch (err) {
-                                console.error('Error marking task complete:', err);
-                                setError('Failed to mark task complete');
-                              }
-                            }}
-                            ariaLabel={done ? 'Done' : 'Mark Complete'}
-                            disabled={done}
-                          />
-                        </div>
-                      </div>
-                    );
-                  });
+                  const dateStr = formatDateLocal(selectedDate);
+                  return (
+                    <DragDropContext onDragEnd={onDragEnd}>
+                      <Droppable droppableId="tasksDroppable">
+                        {(dropProvided) => (
+                          <div ref={dropProvided.innerRef} {...dropProvided.droppableProps}>
+                            {orderedTasks.map((task, index) => {
+                              const isPreventative = typeof task.id === 'string' && task.id.startsWith('p_');
+                              const done = completedTasks.some(c => c.task_id === task.id && c.completion_date.split('T')[0] === dateStr);
+                              return (
+                                <Draggable key={task.id} draggableId={task.id} index={index}>
+                                  {(dragProvided, snapshot) => (
+                                    <div
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      {...dragProvided.dragHandleProps}
+                                      className={`d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${isPreventative ? 'bg-warning bg-opacity-10 border-warning' : ''}`}
+                                      style={{
+                                        ...dragProvided.draggableProps.style,
+                                        backgroundColor: snapshot.isDragging ? '#f8f9fa' : undefined,
+                                      }}
+                                    >
+                                      <div>
+                                        <span className={done ? 'text-muted text-decoration-line-through' : ''}>
+                                          {task.task_name}
+                                        </span>
+                                        {isPreventative && (
+                                          <span className="ms-2 badge bg-warning text-dark">Preventative</span>
+                                        )}
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <CircularCheckButton
+                                          onClick={async () => {
+                                            try {
+                                              if (!done) {
+                                                const completion = await markTaskComplete(task.id, formatDateLocal(selectedDate), getToken);
+                                                if (completion) {
+                                                  setCompletedTasks(prev => [...prev, completion]);
+                                                }
+                                              } else {
+                                                await unmarkTaskComplete(task.id, formatDateLocal(selectedDate), getToken);
+                                                setCompletedTasks(prev =>
+                                                  prev.filter(
+                                                    c => !(c.task_id === task.id && c.completion_date.split('T')[0] === formatDateLocal(selectedDate))
+                                                  )
+                                                );
+                                              }
+                                            } catch (err) {
+                                              console.error('Error toggling task completion:', err);
+                                              setError('Failed to toggle task completion');
+                                            }
+                                          }}
+                                          ariaLabel={done ? 'Undo Complete' : 'Mark Complete'}
+                                          disabled={false}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+                            {dropProvided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  );
                 })()
               )}
             </Card.Body>
@@ -213,13 +311,31 @@ const PetProfile: React.FC = () => {
                 value={selectedDate}
                 className="w-100"
                 tileClassName={({ date }) => {
-                  const dateStr = date.toISOString().split('T')[0];
+                  const dateStr = formatDateLocal(date);
                   const hasDone = completedTasks.some(
                     c => c.completion_date.split('T')[0] === dateStr
                   );
                   return hasDone ? 'bg-success text-white rounded' : '';
                 }}
               />
+            </Card.Body>
+          </Card>
+          <Card>
+            <Card.Header style={{ backgroundColor: PERIWINKLE, color: '#000' }}>
+              <h5 className="mb-0">Additional Pages</h5>
+            </Card.Header>
+            <Card.Body>
+            <PawButton onClick={() => navigate(`/pet/${pet.id}/files`)}>
+                Files
+              </PawButton>
+              <PawButton onClick={() => navigate(`/pet/${pet.id}/shots`)}>
+                Immunizations
+              </PawButton>
+            {pet.is_working_dog && pet.animal_type === 'Service Animal' && (
+              <PawButton onClick={() => navigate(`/pet/${pet.id}/servicetasks`)}>
+                Service Dog Tasks
+              </PawButton>
+            )}
             </Card.Body>
           </Card>
         </Col>

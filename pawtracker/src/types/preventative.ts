@@ -1,5 +1,5 @@
 export interface Preventative {
-  id: number;
+  id: string;
   pet_id: number;
   name: string;
   due_day: number;
