@@ -35,6 +35,7 @@ app.use(
       'http://localhost:3000',
       'https://pawtracker.fly.dev',
       'https://pawtracker25.netlify.app',
+      'https://pawtracker-backend.northflank.com',
       process.env.FRONTEND_URL, // Allow configurable frontend URL
     ].filter((url): url is string => Boolean(url)),
     credentials: true,

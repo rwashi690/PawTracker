@@ -1,7 +1,7 @@
 // Force localhost in development, use environment variable in production
 const API_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:3001' 
-  : process.env.REACT_APP_API_URL || 'https://pawtracker.fly.dev';
+  : process.env.REACT_APP_API_URL || 'https://pawtracker-backend.northflank.com';
 
 // Debug log
 console.log('API Configuration:', {

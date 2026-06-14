@@ -1,0 +1,20 @@
+{
+  "name": "pawtracker-database",
+  "description": "PawTracker PostgreSQL database",
+  "type": "postgres",
+  "version": "15",
+  "resources": {
+    "cpu": {
+      "request": 0.1,
+      "limit": 0.5
+    },
+    "memory": {
+      "request": 128,
+      "limit": 256
+    },
+    "storage": {
+      "size": "10GB"
+    }
+  },
+  "replicas": 1
+}

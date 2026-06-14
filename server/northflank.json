@@ -1,0 +1,45 @@
+{
+  "name": "pawtracker-backend",
+  "description": "PawTracker backend API with persistent storage",
+  "image": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  },
+  "environment": {
+    "NODE_ENV": "production",
+    "PORT": "3001"
+  },
+  "ports": [
+    {
+      "port": 3001,
+      "protocol": "HTTP"
+    }
+  ],
+  "volumes": [
+    {
+      "name": "uploads",
+      "path": "/app/uploads",
+      "size": "10GB"
+    }
+  ],
+  "resources": {
+    "cpu": {
+      "request": 0.25,
+      "limit": 0.5
+    },
+    "memory": {
+      "request": 256,
+      "limit": 512
+    }
+  },
+  "replicas": 1,
+  "healthCheck": {
+    "http": {
+      "path": "/api/health",
+      "port": 3001,
+      "interval": 30,
+      "timeout": 10,
+      "retries": 3
+    }
+  }
+}
