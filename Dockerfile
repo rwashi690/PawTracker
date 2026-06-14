@@ -4,9 +4,10 @@ WORKDIR /app
 
 # Copy server directory
 COPY server/package*.json ./
+COPY server/tsconfig.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install all dependencies (needed for TypeScript build)
+RUN npm install
 
 # Copy server source code
 COPY server/ ./
