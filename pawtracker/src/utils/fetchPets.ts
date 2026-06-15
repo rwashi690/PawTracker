@@ -112,6 +112,35 @@ export const updatePet = async (
   });
 };
 
+export const updatePetImage = async (
+  id: string,
+  imageFile: File,
+  getToken: GetTokenFn
+): Promise<Pet> => {
+  const token = await getToken();
+  if (!token) {
+    throw new Error('Not authenticated. Please sign in.');
+  }
+
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  const response = await fetch(`${BASE_URL}/pets/${id}/image`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update image: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
 export const deletePet = async (
   id: string,
   getToken: GetTokenFn
