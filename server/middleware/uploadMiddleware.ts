@@ -60,8 +60,9 @@ export const compressImage = async (req: any, res: any, next: any) => {
     const uniqueFilename = `${uuidv4()}.webp`;
     const filePath = path.join(uploadsDir, uniqueFilename);
 
-    // Compress and convert to WebP
+    // Compress and convert to WebP with orientation correction
     await sharp(req.file.buffer)
+      .rotate() // Auto-rotate based on EXIF data
       .webp({ quality: 80 })
       .resize(1920, 1920, { 
         fit: 'inside',
