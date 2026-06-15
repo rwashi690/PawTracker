@@ -18,5 +18,5 @@ RUN mkdir -p /app/uploads/pets
 # Expose port
 EXPOSE 3001
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Run migrations and start the application
+CMD ["sh", "-c", "node db/run-migrations.js && node dist/index.js"]

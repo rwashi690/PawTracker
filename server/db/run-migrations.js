@@ -20,6 +20,15 @@ async function runMigrations() {
   });
 
   try {
+    // Create migrations table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        id SERIAL PRIMARY KEY,
+        migration_name VARCHAR(255) UNIQUE NOT NULL,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Get all migration files
     const migrationFiles = fs.readdirSync(path.join(__dirname, 'migrations'))
       .filter(file => file.endsWith('.sql'))
@@ -27,9 +36,27 @@ async function runMigrations() {
 
     // Run each migration in order
     for (const file of migrationFiles) {
+      // Check if migration has already been run
+      const result = await pool.query(
+        'SELECT * FROM schema_migrations WHERE migration_name = $1',
+        [file]
+      );
+
+      if (result.rows.length > 0) {
+        console.log(`Skipping already run migration: ${file}`);
+        continue;
+      }
+
       console.log(`Running migration: ${file}`);
       const sql = fs.readFileSync(path.join(__dirname, 'migrations', file), 'utf8');
       await pool.query(sql);
+      
+      // Record that this migration has been run
+      await pool.query(
+        'INSERT INTO schema_migrations (migration_name) VALUES ($1)',
+        [file]
+      );
+      
       console.log(`Completed migration: ${file}`);
     }
 
