@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import { type CreatePetDTO } from '../models/Pet.js';
 import { PetService } from '../services/petService.js';
-import { upload } from '../middleware/uploadMiddleware.js';
+import { upload, compressImage } from '../middleware/uploadMiddleware.js';
 import { pool } from '../db/db.js';
 import { getUserIdFromClerkId } from '../utils/auth.js';
 import { ensureAuthenticated } from '../middleware/auth.js';
@@ -160,6 +160,7 @@ router.post(
   '/',
   ensureAuthenticated,
   upload.single('image'),
+  compressImage,
   async (req: Request, res: Response): Promise<void> => {
     try {
       console.log('POST /pets - Request:', {
@@ -271,6 +272,7 @@ router.put(
   '/:id/image',
   ensureAuthenticated,
   upload.single('image'),
+  compressImage,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const petId = parseInt(req.params.id || '0');
@@ -466,6 +468,7 @@ router.post(
   '/:id/files',
   ensureAuthenticated,
   upload.single('file'),
+  compressImage,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const petId = parseInt(req.params.id || '0');
