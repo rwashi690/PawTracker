@@ -19,6 +19,7 @@ import BreedDropdown from '../components/BreedDropdown';
 import {
   fetchPet,
   updatePet,
+  updatePetImage,
   deletePet,
   fetchDailyTasks,
   createDailyTask,
@@ -43,6 +44,7 @@ const SettingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Date state
   const [birthMonth, setBirthMonth] = useState<number>(0);
@@ -160,6 +162,23 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+
+    try {
+      setUploadingImage(true);
+      setError(null);
+      const updatedPet = await updatePetImage(id, file, getToken);
+      setPet(updatedPet);
+      setShowToast(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile picture');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   if (error) {
     return (
       <Container className="mt-4">
@@ -189,12 +208,30 @@ const SettingsPage: React.FC = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <BackButton onClick={() => navigate(-1)} />
         <div className="d-flex align-items-center gap-2">
-          <img
-            src={`${API_URL}${pet.image_url}`}
-            alt={pet.name}
-            className="rounded-circle"
-            style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-          />
+          <div className="position-relative">
+            <img
+              src={pet.image_url ? (pet.image_url.startsWith('http') ? pet.image_url : `${API_URL}${pet.image_url}`) : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"%3E%3Crect width="40" height="40" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="20" fill="%23666"%3E%3F%3C/text%3E%3C/svg%3E'}
+              alt={pet.name}
+              className="rounded-circle"
+              style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+            />
+            <label
+              htmlFor="profile-pic-upload"
+              className="position-absolute bottom-0 right-0 text-white rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer', backgroundColor: '#CCCCFF' }}
+              title="Change profile picture"
+            >
+              {uploadingImage ? '...' : '+'}
+            </label>
+            <input
+              id="profile-pic-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+              style={{ display: 'none' }}
+            />
+          </div>
           <h4 className="mb-0">{pet.name}'s Settings</h4>
         </div>
       </div>
